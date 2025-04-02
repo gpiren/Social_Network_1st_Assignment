@@ -1,0 +1,134 @@
+---
+title: "Social Network - Assignment #1"
+author: "Aurora Sterpellone - Gür Piren"
+format:
+  html:
+    self-contained: true
+    embed-resources: true 
+    toc: true
+    toc-location: left
+    toc-floating: true
+    toc-depth: 3  
+    number-sections: true
+date: "2025-04-22"
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+# SOCIAL NETWORK ANALYSIS - ASSIGNMENT #1 
+
+## MARVEL CHARACTERS - PARTNERSHIPS NETWORK
+
+```{r message=FALSE}
+
+library(igraph)
+library(stringr)
+library(dplyr)
+library(ggraph) # ultimately, might not use it. check at the end
+library(tidygraph) # ultimately, might not use it. check at the end
+library(ggrepel)
+library(extrafont)
+
+```
+
+1. Choose a network dataset
+
+Marvel character partnerships, 2018
+
+2. Indicate the number of nodes should be larger than 300 but smaller than 10000.
+
+The number of nodes is 350.
+
+3. Import that data and create a graph using R
+
+## READING THE DATA
+
+```{r}
+
+marvel_nodes <- read.csv("data/nodes.csv", stringsAsFactors = FALSE, quote = "\"", fill = TRUE)
+
+marvel_links <- read.csv("data/edges.csv", stringsAsFactors = FALSE)
+
+```
+
+## DATA DESCRIPTION
+
+Here we should explain what each column and respective values represent. For instance, 'Group' refers to whether the character is a hero (0), villain (1), or neither (2). We can do this laterrr!
+
+## DATA CLEANING
+
+```{r}
+# to get proper x and y coordinates
+
+marvel_nodes$pos_x <- as.numeric(str_extract(marvel_nodes$X_pos, "-?\\d+\\.\\d+"))
+marvel_nodes$pos_y <- as.numeric(str_extract_all(marvel_nodes$X_pos, "-?\\d+\\.\\d+") %>% sapply(`[`, 2))
+
+# we don't need the X_pos anymore
+marvel_nodes$X_pos <- NULL
+```
+
+### Renaming columns for better readability
+
+```{r}
+
+marvel_nodes <- marvel_nodes |> 
+  rename(id = X..index,
+         character_name = id,
+         x = pos_x,
+         y = pos_y)
+
+marvel_links <- marvel_links |> 
+  rename(source = X..source,
+         target = target)
+```
+
+## PLOT
+
+```{r}
+graph_marvel <- graph_from_data_frame(d = marvel_links, vertices = marvel_nodes, directed = FALSE)
+
+plot(graph_marvel, vertex.label = V(graph_marvel)$character_name, vertex.size = 5, edge.color = "gray")
+
+```
+
+Let's work on a cleaner plot, ideally I wanted to plot it with those characters that has the biggest sizes (number of partnerships) only, but I was not able to position the node labels clearly. maybe we can try later.
+
+For the font of use
+
+```{r message=FALSE, warning=FALSE}
+
+font_import(pattern = "Marvel")  # Looks for "Marvel" in filenames
+loadfonts()  # Registers the fonts with R
+```
+
+
+```{r warning=FALSE}
+V(graph_marvel)$group <- marvel_nodes$group
+
+# defining a color for each group - heroes '0', villains '1', and neither '2'
+group_colors <- c("0" = "lightblue", "1" = "tomato", "2" = "forestgreen")  
+
+# Set font globally for title and legend
+par(family = "Marvel")
+
+plot(graph_marvel, 
+     vertex.label = NA,                      
+     vertex.size = 3,                        # node size
+     edge.color = "gray15",                  # link line color
+     vertex.color = group_colors[as.character(V(graph_marvel)$group)],  # colors by group
+     layout = cbind(V(graph_marvel)$x, V(graph_marvel)$y))  # for the coordinates
+
+title("Marvel Partnerships Network", cex.main = 1.2)
+
+# for the legend
+legend("topleft", 
+       legend = c("Heroes (0)", "Villains (1)", "Neither (2)"), 
+       col = c("lightblue", "tomato", "forestgreen"), 
+       pch = 16,  
+       bty = "y")
+```
+
+
+
+
