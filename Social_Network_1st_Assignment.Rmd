@@ -16,9 +16,9 @@ editor_options:
     wrap: sentence
 ---
 
-# SOCIAL NETWORK ANALYSIS - ASSIGNMENT #1 
+# Social Network Analysis - Assignment #1 
 
-## MARVEL CHARACTERS - PARTNERSHIPS NETWORK
+## Marvel Characters - Partnerships Network
 
 ```{r message=FALSE}
 
@@ -32,17 +32,17 @@ library(extrafont)
 
 ```
 
-1. Choose a network dataset
+**1. Choose a network dataset**
 
 Marvel character partnerships, 2018
 
-2. Indicate the number of nodes should be larger than 300 but smaller than 10000.
+**2. Indicate the number of nodes should be larger than 300 but smaller than 10000.**
 
 The number of nodes is 350.
 
-3. Import that data and create a graph using R
+**3. Import that data and create a graph using R**
 
-## READING THE DATA
+## Reading the data
 
 ```{r}
 
@@ -52,11 +52,11 @@ marvel_links <- read.csv("data/edges.csv", stringsAsFactors = FALSE)
 
 ```
 
-## DATA DESCRIPTION
+## Data description
 
 Here we should explain what each column and respective values represent. For instance, 'Group' refers to whether the character is a hero (0), villain (1), or neither (2). We can do this laterrr!
 
-## DATA CLEANING
+## Data cleaning
 
 ```{r}
 # to get proper x and y coordinates
@@ -83,12 +83,12 @@ marvel_links <- marvel_links |>
          target = target)
 ```
 
-## PLOT
+## Plot
 
 ```{r}
-graph_marvel <- graph_from_data_frame(d = marvel_links, vertices = marvel_nodes, directed = FALSE)
+marvel_network <- graph_from_data_frame(d = marvel_links, vertices = marvel_nodes, directed = FALSE)
 
-plot(graph_marvel, vertex.label = V(graph_marvel)$character_name, vertex.size = 5, edge.color = "gray")
+plot(marvel_network, vertex.label = V(marvel_network)$character_name, vertex.size = 5, edge.color = "gray")
 
 ```
 
@@ -104,7 +104,7 @@ loadfonts()  # Registers the fonts with R
 
 
 ```{r warning=FALSE}
-V(graph_marvel)$group <- marvel_nodes$group
+V(marvel_network)$group <- marvel_nodes$group
 
 # defining a color for each group - heroes '0', villains '1', and neither '2'
 group_colors <- c("0" = "lightblue", "1" = "tomato", "2" = "forestgreen")  
@@ -112,12 +112,12 @@ group_colors <- c("0" = "lightblue", "1" = "tomato", "2" = "forestgreen")
 # Set font globally for title and legend
 par(family = "Marvel")
 
-plot(graph_marvel, 
+plot(marvel_network, 
      vertex.label = NA,                      
      vertex.size = 3,                        # node size
      edge.color = "gray15",                  # link line color
-     vertex.color = group_colors[as.character(V(graph_marvel)$group)],  # colors by group
-     layout = cbind(V(graph_marvel)$x, V(graph_marvel)$y))  # for the coordinates
+     vertex.color = group_colors[as.character(V(marvel_network)$group)],  # colors by group
+     layout = cbind(V(marvel_network)$x, V(marvel_network)$y))  # for the coordinates
 
 title("Marvel Partnerships Network", cex.main = 1.2)
 
@@ -130,5 +130,138 @@ legend("topleft",
 ```
 
 
+**What is the number of nodes and links?**
+
+The number of nodes for the Marvel network is 350, meaning that the network consists of 350 different Marvel characters (Heroes, Villains, and Neither).
+
+The number of links (the number of partnerships amongst all characters) is 346. This means that there are 346 different partnerships formed by the characters.
+
+```{r}
+# extracting number of nodes (characters) and links (partnerships)
+
+num_nodes <- vcount(marvel_network)
+num_links <- ecount(marvel_network)
+
+# results
+cat("Marvel Network Nodes:", num_nodes, "\nMarvel Network Links:", num_links, "\n")
+
+# a simple plot
+
+bp_nodes_links <- barplot(c(num_nodes, num_links), 
+              names.arg = c("Nodes", "Links"), 
+              main = "Marvel Network Size", 
+              col = c("#7fcdbb", "#2c7fb8"),  
+              ylim = c(0, max(num_nodes, num_links) * 1.3))  
+text(bp_nodes_links, c(num_nodes, num_links) / 2,  
+     labels = c(num_nodes, num_links), col = "white", cex = 1.2)
+```
+
+
+**What is the average degree in the network? And the standard deviation of the degree?**
+
+We start with calculating the number of connections (links) for each node in the network. The degree function helps us count the number of incoming and outgoing links. This choice is due to the fact that the network is not a directed one (which means that connections go both ways, aka it takes two to tango).
+
+Results show us that, on average, each Marvel character has about 2 (1.977143) partnerships.
+
+As for the standard deviation, the number of partnerships per character typically differs from the average by 1.5 (1.54012). This implies that some characters have more or fewer partnerships by 1.5, which tells us that the number does not vary wildly. 
+
+
+```{r}
+
+# calculating degrees, average links and standard deviations
+
+degrees <- degree(marvel_network, mode = "all")
+avg_degree <- mean(degrees)
+std_dev_degree <- sd(degrees)
+
+# results
+cat("Average degree:", avg_degree, "\nStandard deviation:", std_dev_degree, "\n")
+
+```
+
+
+**Plot the degree distribution in linear-linear scale and in log-log-scale. Does it have a typical connectivity? What is the degree of the most connected node?**
+
+Linear-linear scale shows how many nodes have each degree on regular scales. There is a sharp peak around the lower numbers of partnerships (1,2,3, and 4) with a long tail all the way towards 12, showing us the maximum number of partnerships possessed by a single character. The right-skewed distribution implies an uneven distributiın of partnerships. An interesting finding from this plot is that the number of characters with 4 partnerships is greater than that of characters with 3 partnerships.
+
+The log-log plot of the degree distribution shows a scattered pattern, rather than a straight line, indicating that the network does not follow a power-law distribution typical of scale-free networks. Instead, the degrees (1 to 12) suggest a more random or even connectivity pattern among the characters. This also means that there are no dominant hubs.
+
+
+```{r}
+# we previously calculated the degrees for all nodes:
+
+# print(degrees)
+
+# distribution of partnership numbers (linear-linear)
+
+degrees <- degree(marvel_network, mode = "all")
+hist(degrees, main = "Degree Distribution", xlab = "Number of Partnerships", col = "#addd8e")
+
+# log-log
+
+plot(table(degrees), log = "xy", main = "Degree Distribution (Log-Log)", xlab = "Degree", ylab = "Frequency", pch = 16, col = "tomato")
+
+max_degree <- max(degrees)
+
+```
+
+
+**What is the clustering coefficient (transitivity) in the network?**
+
+Transitivity measures how often nodes’ neighbors are also connected. The transitivity value of 0.2194149 indicates that the network is more spread out than being tightly knit.
+
+
+```{r}
+
+clustering_coeff <- transitivity(marvel_network, type = "global")
+
+#results
+cat("Clustering coefficient:", clustering_coeff, "\n")
+
+```
+
+
+**What is the assortativity (degree) in the network?**
+
+Assortativity measures if nodes with similar degrees connect (positive value) or if high-degree nodes connect to low-degree ones (negative value). As explained earlier, we use 'directed = FALSE' because our network is bidirectional, meaning that a link (partnership) requires two parties.
+
+The result (assortativity degree of -0.011047) shows that in the Marvel network, characters with high numbers of partnerships slightly tend to connect with those with fewer partnerships, but the effect is very weak (because it is very close to 0), almost random.
+
+```{r}
+
+assortativity_degree <- assortativity_degree(marvel_network, directed = FALSE)
+
+# result  
+cat("Assortativity (degree):", assortativity_degree, "\n")
+
+```
+
+
+**Using the Louvain method, does the network have a community structure?**
+
+```{r}
+
+```
+
+
+**If so, what is its modularity?**
+
+```{r}
+
+```
+
+
+**Test that the clustering coefficient in the network cannot be statistically explain by a configuration model in which the nodes have the same degree distribution as the original.**
+
+```{r}
+
+```
+
+
+**Visualize the neighborhood of the node with the largest centrality (closeness)**
+
+```{r}
+
+```
 
 
