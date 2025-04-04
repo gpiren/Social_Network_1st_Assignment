@@ -130,7 +130,7 @@ legend("topleft",
 ```
 
 
-**What is the number of nodes and links?**
+**4. What is the number of nodes and links?**
 
 The number of nodes for the Marvel network is 350, meaning that the network consists of 350 different Marvel characters (Heroes, Villains, and Neither).
 
@@ -157,7 +157,7 @@ text(bp_nodes_links, c(num_nodes, num_links) / 2,
 ```
 
 
-**What is the average degree in the network? And the standard deviation of the degree?**
+**5. What is the average degree in the network? And the standard deviation of the degree?**
 
 We start with calculating the number of connections (links) for each node in the network. The degree function helps us count the number of incoming and outgoing links. This choice is due to the fact that the network is not a directed one (which means that connections go both ways, aka it takes two to tango).
 
@@ -180,7 +180,7 @@ cat("Average degree:", avg_degree, "\nStandard deviation:", std_dev_degree, "\n"
 ```
 
 
-**Plot the degree distribution in linear-linear scale and in log-log-scale. Does it have a typical connectivity? What is the degree of the most connected node?**
+**6. Plot the degree distribution in linear-linear scale and in log-log-scale. Does it have a typical connectivity? What is the degree of the most connected node?**
 
 Linear-linear scale shows how many nodes have each degree on regular scales. There is a sharp peak around the lower numbers of partnerships (1,2,3, and 4) with a long tail all the way towards 12, showing us the maximum number of partnerships possessed by a single character. The right-skewed distribution implies an uneven distributiın of partnerships. An interesting finding from this plot is that the number of characters with 4 partnerships is greater than that of characters with 3 partnerships.
 
@@ -221,7 +221,7 @@ cat("Clustering coefficient:", clustering_coeff, "\n")
 ```
 
 
-**What is the assortativity (degree) in the network?**
+**7. What is the assortativity (degree) in the network?**
 
 Assortativity measures if nodes with similar degrees connect (positive value) or if high-degree nodes connect to low-degree ones (negative value). As explained earlier, we use 'directed = FALSE' because our network is bidirectional, meaning that a link (partnership) requires two parties.
 
