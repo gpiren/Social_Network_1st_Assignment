@@ -240,28 +240,73 @@ cat("Assortativity (degree):", assortativity_degree, "\n")
 **Using the Louvain method, does the network have a community structure?**
 
 ```{r}
+#idk
+# Community detection using Louvain method
+louvain_communities <- cluster_louvain(marvel_network)
 
+# Assigning community membership to each node
+V(marvel_network)$community <- membership(louvain_communities)
+
+# Plotting the network with community coloring
+plot(marvel_network, 
+     vertex.label = NA, 
+     vertex.size = 3, 
+     vertex.color = V(marvel_network)$community,
+     layout = layout_with_fr(marvel_network),
+     main = "Louvain Community Detection")
 ```
 
 
 **If so, what is its modularity?**
 
-```{r}
+The modularity score of 0.9121, obtained using the Louvain community detection algorithm, indicates a very strong community structure in the Marvel network. This suggests that characters tend to form highly interconnected groups with few connections between groups — likely reflecting narrative-based teams or story arcs within the Marvel universe.
 
+Characters tend to form tight-knit clusters — most partnerships occur within those clusters, and there are fewer cross-cluster partnerships than you would expect by chance.
+
+```{r}
+# Modularity value of the Louvain communities
+modularity_value <- modularity(louvain_communities)
+
+cat("Modularity of the Louvain community structure:", modularity_value, "\n")
 ```
 
 
 **Test that the clustering coefficient in the network cannot be statistically explain by a configuration model in which the nodes have the same degree distribution as the original.**
 
-```{r}
+After generating a degree-preserving rewired version of the Marvel network, we find that the clustering coefficient drops from 0.219 (the Original Marvel network clustering coefficient) to 0.024 (the Rewired graph clustering coefficient). This significant decrease suggests that the clustering structure observed in the real network is not explained by the degree distribution alone. Instead, it reflects meaningful group structures, such as narrative teams or recurring character associations in the Marvel universe.
 
+The original Marvel network has much higher clustering than its degree-preserving random counterpart: characters that are connected to the same person tend to be connected to each other — suggesting intentional grouping or narrative structure (e.g. teams like Avengers or X-Men).
+In the rewired version, where the number of connections for each character is preserved but partners are randomized, that natural triangle-forming tendency disappears.
+
+```{r}
+rewired_graph <- rewire(marvel_network, with = keeping_degseq(niter = ecount(marvel_network) * 10))
+
+# Then compute the clustering coefficient
+rewired_transitivity <- transitivity(rewired_graph, type = "global")
+cat("Clustering coefficient of rewired graph:", rewired_transitivity, "\n")
 ```
 
+-->  bar chart comparing the two values visually??
 
 **Visualize the neighborhood of the node with the largest centrality (closeness)**
 
 ```{r}
+# Calculate closeness centrality for each node
+closeness_scores <- closeness(marvel_network, normalized = TRUE)
 
+# Find the node with the highest closeness
+max_closeness_node <- which.max(closeness_scores)
+
+# Get the ego network (1-step neighborhood)
+ego_net <- make_ego_graph(marvel_network, order = 1, nodes = max_closeness_node)[[1]]
+
+# Plot the ego network
+plot(ego_net,
+     vertex.label = V(ego_net)$character_name,
+     vertex.size = 5,
+     vertex.color = "gold",
+     edge.color = "gray30",
+     main = paste("Neighborhood of:", V(marvel_network)$character_name[max_closeness_node]))
 ```
 
 
