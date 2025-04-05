@@ -129,6 +129,41 @@ legend("topleft",
        bty = "y")
 ```
 
+```{r}
+# plot with labels for the biggest nodes
+
+# Calculate the degree of each node
+degrees <- degree(marvel_network)
+
+# Determine a threshold for "biggest" nodes, e.g., top 10%
+threshold <- quantile(degrees, 0.98)
+
+# Identify nodes with degree above the threshold
+big_nodes <- V(marvel_network)[degrees > threshold]$character_name
+
+# Plot the network with labels for the biggest nodes
+plot(marvel_network,
+     vertex.label = ifelse(degrees > threshold, V(marvel_network)$character_name, NA),
+     vertex.size = degrees / max(degrees) * 10,  # Scale node size by degree
+     edge.color = "gray15",
+     vertex.color = group_colors[as.character(V(marvel_network)$group)],
+     layout = cbind(V(marvel_network)$x, V(marvel_network)$y),
+     vertex.label.family = "Marvel",
+     vertex.label.cez = 0.5) # Adjust label size if needed
+
+par(family = "Marvel")
+title("Marvel Partnerships Network", cex.main = 1.2)
+
+# Add legend
+legend("topleft",
+       legend = c("Heroes (0)", "Villains (1)", "Neither (2)"),
+       col = c("lightblue", "tomato", "forestgreen"),
+       pch = 16,
+       bty = "y",
+       cex = 0.8,  # Adjust legend text size if needed
+       text.font = 2)   # Use bold font for legend text
+```
+
 
 **4. What is the number of nodes and links?**
 
