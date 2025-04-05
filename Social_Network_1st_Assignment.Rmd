@@ -253,7 +253,9 @@ plot(marvel_network,
      vertex.size = 3, 
      vertex.color = V(marvel_network)$community,
      layout = layout_with_fr(marvel_network),
-     main = "Louvain Community Detection")
+     main = "Louvain Community Detection",
+     fontfamily = "Marvel")
+
 ```
 
 
