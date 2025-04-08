@@ -16,7 +16,7 @@ editor_options:
     wrap: sentence
 ---
 
-# Social Network Analysis - Assignment #1 
+# Social Network Analysis - Assignment #1
 
 ## Marvel Characters - Partnerships Network
 
@@ -51,7 +51,6 @@ cat("Number of nodes:", num_nodes)
 
 ```
 
-
 **3. Import that data and create a graph using R**
 
 ## Reading the data
@@ -66,7 +65,9 @@ marvel_links <- read.csv("data/edges.csv", stringsAsFactors = FALSE)
 
 ## Data description
 
-Here we should explain what each column and respective values represent. For instance, 'Group' refers to whether the character is a hero (0), villain (1), or neither (2). We can do this laterrr!
+Here we should explain what each column and respective values represent.
+For instance, 'Group' refers to whether the character is a hero (0), villain (1), or neither (2).
+We can do this laterrr!
 
 ## Data cleaning
 
@@ -104,7 +105,8 @@ plot(marvel_network, vertex.label = V(marvel_network)$character_name, vertex.siz
 
 ```
 
-Let's work on a cleaner plot, ideally I wanted to plot it with those characters that has the biggest sizes (number of partnerships) only, but I was not able to position the node labels clearly. maybe we can try later.
+Let's work on a cleaner plot, ideally I wanted to plot it with those characters that has the biggest sizes (number of partnerships) only, but I was not able to position the node labels clearly.
+maybe we can try later.
 
 For the font of use
 
@@ -112,24 +114,37 @@ For the font of use
 
 font_import(pattern = "Marvel")  # Looks for "Marvel" in filenames
 loadfonts()  # Registers the fonts with R
+
+# Set font globally
+par(family = "Marvel")
+
 ```
 
-For the colours:
+For the colours, we created a unique palette using the colours for the main Marvel superheroes:
 
-```{r}
+Iron Man Red – #B40000
+
+Captain America Blue – #0033A0
+
+Hulk Green – #3C9A3F 
+
+Thor Gold – #D6A400
+
+Loki Purple – #6E0B75
+
+![Marvel Colour Palette](marvel%20palette.png)
+
+```{r message=FALSE, warning=FALSE}
 # A consistent color schemes
-group_colors <- c("#e23636", "#000000", "#504a4a", "#518cca", "#f78f3f", "#4682B4")
-```
 
+# defining a color for each group - heroes '0', villains '1', and neither '2'
+
+group_colors <- c("0" = "#B40000", "1" = "#0033A0", "2" = "#3C9A3F")
+
+```
 
 ```{r warning=FALSE}
 V(marvel_network)$group <- marvel_nodes$group
-
-# defining a color for each group - heroes '0', villains '1', and neither '2'
-group_colors <- c("0" = "#e23636", "1" = "#f78f3f", "2" = "#518cca")  
-
-# Set font globally for title and legend
-par(family = "Marvel")
 
 plot(marvel_network, 
      vertex.label = NA,                      
@@ -143,7 +158,7 @@ title("Marvel Partnerships Network", cex.main = 1.2)
 # for the legend
 legend("topleft", 
        legend = c("Heroes (0)", "Villains (1)", "Neither (2)"), 
-       col = c("#e23636", "#f78f3f", "#518cca"), 
+       col = c("#B40000", "#0033A0", "#3C9A3F"), 
        pch = 16,  
        bty = "y")
 ```
@@ -183,12 +198,12 @@ legend("topleft",
        text.font = 2)   # Use bold font for legend text
 ```
 
-
 **4. What is the number of nodes and links?**
 
 The number of nodes for the Marvel network is 350, meaning that the network consists of 350 different Marvel characters (Heroes, Villains, and Neither).
 
-The number of links (the number of partnerships amongst all characters) is 346. This means that there are 346 different partnerships formed by the characters.
+The number of links (the number of partnerships amongst all characters) is 346.
+This means that there are 346 different partnerships formed by the characters.
 
 ```{r}
 # extracting number of nodes (characters) and links (partnerships)
@@ -210,15 +225,16 @@ text(bp_nodes_links, c(num_nodes, num_links) / 2,
      labels = c(num_nodes, num_links), col = "white", cex = 1.2)
 ```
 
-
 **5. What is the average degree in the network? And the standard deviation of the degree?**
 
-We start with calculating the number of connections (links) for each node in the network. The degree function helps us count the number of incoming and outgoing links. This choice is due to the fact that the network is not a directed one (which means that connections go both ways, aka it takes two to tango).
+We start with calculating the number of connections (links) for each node in the network.
+The degree function helps us count the number of incoming and outgoing links.
+This choice is due to the fact that the network is not a directed one (which means that connections go both ways, aka it takes two to tango).
 
 Results show us that, on average, each Marvel character has about 2 (1.977143) partnerships.
 
-As for the standard deviation, the number of partnerships per character typically differs from the average by 1.5 (1.54012). This implies that some characters have more or fewer partnerships by 1.5, which tells us that the number does not vary wildly. 
-
+As for the standard deviation, the number of partnerships per character typically differs from the average by 1.5 (1.54012).
+This implies that some characters have more or fewer partnerships by 1.5, which tells us that the number does not vary wildly.
 
 ```{r}
 
@@ -233,13 +249,16 @@ cat("Average degree:", avg_degree, "\nStandard deviation:", std_dev_degree, "\n"
 
 ```
 
-
 **6. Plot the degree distribution in linear-linear scale and in log-log-scale. Does it have a typical connectivity? What is the degree of the most connected node?**
 
-Linear-linear scale shows how many nodes have each degree on regular scales. There is a sharp peak around the lower numbers of partnerships (1,2,3, and 4) with a long tail all the way towards 12, showing us the maximum number of partnerships possessed by a single character. The right-skewed distribution implies an uneven distributiın of partnerships. An interesting finding from this plot is that the number of characters with 4 partnerships is greater than that of characters with 3 partnerships.
+Linear-linear scale shows how many nodes have each degree on regular scales.
+There is a sharp peak around the lower numbers of partnerships (1,2,3, and 4) with a long tail all the way towards 12, showing us the maximum number of partnerships possessed by a single character.
+The right-skewed distribution implies an uneven distributiın of partnerships.
+An interesting finding from this plot is that the number of characters with 4 partnerships is greater than that of characters with 3 partnerships.
 
-The log-log plot of the degree distribution shows a scattered pattern, rather than a straight line, indicating that the network does not follow a power-law distribution typical of scale-free networks. Instead, the degrees (1 to 12) suggest a more random or even connectivity pattern among the characters. This also means that there are no dominant hubs.
-
+The log-log plot of the degree distribution shows a scattered pattern, rather than a straight line, indicating that the network does not follow a power-law distribution typical of scale-free networks.
+Instead, the degrees (1 to 12) suggest a more random or even connectivity pattern among the characters.
+This also means that there are no dominant hubs.
 
 ```{r}
 # we previously calculated the degrees for all nodes:
@@ -270,11 +289,10 @@ ggplot(data.frame(degree = degrees), aes(x = degree)) +
   theme(plot.title = element_text(family = "Marvel", size = 16))
 ```
 
-
-
 **What is the clustering coefficient (transitivity) in the network?**
 
-Transitivity measures how often nodes’ neighbors are also connected. The transitivity value of 0.2194149 indicates that the network is more spread out than being tightly knit.
+Transitivity measures how often nodes’ neighbors are also connected.
+The transitivity value of 0.2194149 indicates that the network is more spread out than being tightly knit.
 
 ```{r}
 
@@ -285,10 +303,10 @@ cat("Clustering coefficient:", clustering_coeff, "\n")
 
 ```
 
-
 **7. What is the assortativity (degree) in the network?**
 
-Assortativity measures if nodes with similar degrees connect (positive value) or if high-degree nodes connect to low-degree ones (negative value). As explained earlier, we use 'directed = FALSE' because our network is bidirectional, meaning that a link (partnership) requires two parties.
+Assortativity measures if nodes with similar degrees connect (positive value) or if high-degree nodes connect to low-degree ones (negative value).
+As explained earlier, we use 'directed = FALSE' because our network is bidirectional, meaning that a link (partnership) requires two parties.
 
 The result (assortativity degree of -0.011047) shows that in the Marvel network, characters with high numbers of partnerships slightly tend to connect with those with fewer partnerships, but the effect is very weak (because it is very close to 0), almost random.
 
@@ -318,10 +336,10 @@ ggraph(marvel_network, layout = "fr") +
 
 ```
 
-
 **Using the Louvain method, does the network have a community structure?**
 
-Yes. The network shows a community structure, as indicated by the Louvain community detection plot where nodes are grouped into distinct color clusters, suggesting characters form groups with more connections within clusters than between them.
+Yes.
+The network shows a community structure, as indicated by the Louvain community detection plot where nodes are grouped into distinct color clusters, suggesting characters form groups with more connections within clusters than between them.
 
 ```{r}
 set.seed(616)
@@ -360,12 +378,12 @@ ggplot(as_tbl_graph(marvel_network), aes(x = x, y = y, color = as.factor(communi
 
 ```
 
-
 **If so, what is its modularity?**
 
 Modularity score helps us decide to what extent the community structure demonstrates strong ties.
 
-The modularity score of 0.92 (0.9116242), obtained using the Louvain community detection algorithm, indicates a very strong community structure in the Marvel network. This suggests that characters tend to form highly interconnected groups with few connections between groups — likely reflecting narrative-based teams or story arcs within the Marvel universe.
+The modularity score of 0.92 (0.9116242), obtained using the Louvain community detection algorithm, indicates a very strong community structure in the Marvel network.
+This suggests that characters tend to form highly interconnected groups with few connections between groups — likely reflecting narrative-based teams or story arcs within the Marvel universe.
 
 Characters tend to form tight clusters, most partnerships occurring within those clusters, and there are fewer cross-cluster partnerships than you would expect by chance.
 
@@ -377,12 +395,13 @@ modularity_value <- modularity(louvain_communities)
 cat("Modularity of the Louvain community structure:", modularity_value, "\n")
 ```
 
-
 **Test that the clustering coefficient in the network cannot be statistically explained by a configuration model in which the nodes have the same degree distribution as the original.**
 
-After generating a degree-preserving rewired version of the Marvel network, we find that the clustering coefficient drops from 0.219 (the original Marvel network clustering coefficient) to 0.004 (the rewired graph clustering coefficient). This significant decrease suggests that the clustering structure observed in the real network is not explained by the degree distribution alone. Instead, it reflects meaningful group structures, such as narrative teams or recurring character associations in the Marvel universe.
+After generating a degree-preserving rewired version of the Marvel network, we find that the clustering coefficient drops from 0.219 (the original Marvel network clustering coefficient) to 0.004 (the rewired graph clustering coefficient).
+This significant decrease suggests that the clustering structure observed in the real network is not explained by the degree distribution alone.
+Instead, it reflects meaningful group structures, such as narrative teams or recurring character associations in the Marvel universe.
 
-The original Marvel network has much higher clustering than its degree-preserving random counterpart: characters that are connected to the same person tend to be connected to each other — suggesting intentional grouping or narrative structure  (such as teams like Avengers or X-Men).
+The original Marvel network has much higher clustering than its degree-preserving random counterpart: characters that are connected to the same person tend to be connected to each other — suggesting intentional grouping or narrative structure (such as teams like Avengers or X-Men).
 
 In the rewired version, where the number of connections for each character is preserved but partners are randomized, that natural tendency disappears.
 
@@ -396,7 +415,7 @@ rewired_transitivity <- transitivity(rewired_graph, type = "global")
 cat("Clustering coefficient of rewired graph:", rewired_transitivity, "\n")
 ```
 
-### Comparing the two networks 
+### Comparing the two networks
 
 ```{r}
 
@@ -410,12 +429,13 @@ ggplot(data, aes(x = Network, y = Clustering, fill = Network)) +
   theme_minimal()
 ```
 
-
 **Visualize the neighborhood of the node with the largest centrality (closeness)**
 
-The neighbourhood of the node with the largest centrality belongs to Baron Zemo, a character which is not as popular and known as some others such as Spider-Man, Superman, and Captain America. 
+The neighbourhood of the node with the largest centrality belongs to Baron Zemo, a character which is not as popular and known as some others such as Spider-Man, Superman, and Captain America.
 
-The reason why Baron Zemo appears as the node with the largest centrality is likely due to its strategic location. Although the character has few partnerships (low degree), his centrality in the network makes him a strategic person, allowing him to reach out to many characters in shortest paths. It is also very likely that he is close to the core of the network, which has short paths to other hubs in the network.
+The reason why Baron Zemo appears as the node with the largest centrality is likely due to its strategic location.
+Although the character has few partnerships (low degree), his centrality in the network makes him a strategic person, allowing him to reach out to many characters in shortest paths.
+It is also very likely that he is close to the core of the network, which has short paths to other hubs in the network.
 
 ```{r}
 
@@ -436,5 +456,3 @@ plot(ego_net,
      edge.color = "gray30",
      main = paste("Neighborhood of:", V(marvel_network)$character_name[max_closeness_node]))
 ```
-
-
