@@ -16,21 +16,9 @@ editor_options:
     wrap: sentence
 ---
 
-# Social Network Analysis - Assignment #1
+## Introduction
 
-Introduction
-
-![Marvel Color Palette]('/Users/gpen/Dropbox/Mac/Desktop/UC3M/CSS/Semester 2/Q4/Social Network Analysis/Assignments/Assignment #1/Social_Network_1st_Assignment/Screenshot 2025-04-08 at 4.41.52 PM.png')
-
-1. Iron Man Red – #B40000
-
-2. Captain America Blue – #0033A0
-
-3. Hulk Green – #3C9A3F
-
-4. Thor Gold – #D6A400
-
-5. Loki Purple – #6E0B75
+Through this file, we will reveal the number and nature of the partnerships between heroes, villains, and neutral characters across the Marvel Universe. While doing so, we will try to answer a number of questions that were raised as part of the first homework assignment for the Social Network Analysis. 
 
 ## Marvel Characters - Partnerships Network
 
@@ -79,9 +67,30 @@ marvel_links <- read.csv("data/edges.csv", stringsAsFactors = FALSE)
 
 ## Data description
 
-Here we should explain what each column and respective values represent.
-For instance, 'Group' refers to whether the character is a hero (0), villain (1), or neither (2).
-We can do this laterrr!
+Initially, we have two datasets separately for nodes and links. Later on, they will be merged.
+
+1. The dataset for the nodes includes the following variables:
+
+**id:** The index number of the character in the network.
+
+**character_name:** The name of the character, which could be a hero, villain, or neutral character.
+
+**group:** Indicates the category of the character (e.g., hero, villain, or neutral).
+
+**size:** Represents the number of partnerships the character has within the network.
+
+**x:** The X-coordinate that positions the character in the network layout.
+
+**y:** The Y-coordinate that positions the character in the network layout.
+
+
+
+2. The dataset for the links, on the other hand, incorporates the following variables:
+
+**source:** This column represents the starting character in a partnership (the character initiating or belonging to the partnership).
+
+**target:** This column indicates the partner in the relationship with the source character.
+
 
 ## Data cleaning
 
@@ -137,17 +146,18 @@ par(family = "Marvel")
 
 For the colours, we created a unique palette using the colours for the main Marvel superheroes:
 
-Iron Man Red – #B40000
+![Marvel Color Palette](./marvel_palette.jpeg)
 
-Captain America Blue – #0033A0
+1. Iron Man Red – #B40000
 
-Hulk Green – #3C9A3F 
+2. Captain America Blue – #0033A0
 
-Thor Gold – #D6A400
+3. Hulk Green – #3C9A3F
 
-Loki Purple – #6E0B75
+4. Thor Gold – #D6A400
 
-![Marvel Colour Palette](marvel%20palette.png)
+5. Loki Purple – #6E0B75
+
 
 ```{r message=FALSE, warning=FALSE}
 # A consistent color schemes
@@ -373,22 +383,6 @@ plot(marvel_network,
      layout = layout_with_fr(marvel_network),
      main = "Louvain Community Detection",
      fontfamily = "Marvel")
-
-```
-
-```{r}
-set.seed(616)
-louvain_communities <- cluster_louvain(marvel_network)
-V(marvel_network)$community <- membership(louvain_communities)
-
-# Plot with ggraph
-ggraph(marvel_network, layout = 'fr') +  # 'fr' layout is Force-Directed Layout
-  geom_node_point(aes(color = as.factor(community), size = degree)) +
-  geom_edge_link() +
-  scale_color_viridis_d() +
-  theme_minimal() +
-  labs(title = "Community Detection", color = "Community") +
-  theme(plot.title = element_text(family = "Marvel", size = 16))
 
 ```
 
