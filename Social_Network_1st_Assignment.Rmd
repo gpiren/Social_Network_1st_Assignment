@@ -384,6 +384,42 @@ plot(marvel_network,
 
 ```
 
+```{r}
+# to change colours
+set.seed(616)
+
+# Community detection using Louvain method
+louvain_communities <- cluster_louvain(marvel_network)
+
+# Community membership for each node
+V(marvel_network)$community <- membership(louvain_communities)
+
+# Dynamically create a color palette based on actual community IDs
+unique_communities <- sort(unique(V(marvel_network)$community))
+custom_colors <- sample(c("#B40000", "#0033A0", "#3C9A3F", "#D6A400", "#6E0B75"), length(unique_communities), replace = TRUE)
+names(custom_colors) <- as.character(unique_communities)
+
+# Network community plot with custom colors
+plot(marvel_network,
+     vertex.label = NA,
+     vertex.size = 3,
+     vertex.color = custom_colors[as.character(V(marvel_network)$community)],
+     layout = layout_with_fr(marvel_network),
+     main = "Louvain Community Detection",
+     fontfamily = "Marvel")
+
+# Add legend
+legend("topleft",
+       legend = paste("Community", names(custom_colors)),
+       col = custom_colors,
+       pch = 16,
+       bty = "n",
+       cex = 0.8,
+       title = "Communities")
+
+```
+
+
 ## 10. If so, what is its modularity?**
 
 Modularity score helps us decide to what extent the community structure demonstrates strong ties.
