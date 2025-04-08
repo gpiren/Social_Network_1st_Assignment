@@ -377,19 +377,18 @@ plot(marvel_network,
 ```
 
 ```{r}
-# Plot community structure
 set.seed(616)
 louvain_communities <- cluster_louvain(marvel_network)
 V(marvel_network)$community <- membership(louvain_communities)
 
-ggplot(as_tbl_graph(marvel_network), aes(x = x, y = y, color = as.factor(community))) +
-  geom_node_point(aes(size = degree)) +
+# Plot with ggraph
+ggraph(marvel_network, layout = 'fr') +  # 'fr' layout is Force-Directed Layout
+  geom_node_point(aes(color = as.factor(community), size = degree)) +
   geom_edge_link() +
   scale_color_viridis_d() +
   theme_minimal() +
   labs(title = "Community Detection", color = "Community") +
   theme(plot.title = element_text(family = "Marvel", size = 16))
-
 
 ```
 
