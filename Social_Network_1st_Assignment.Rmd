@@ -208,7 +208,8 @@ plot(marvel_network,
      vertex.color = group_colors[as.character(V(marvel_network)$group)],
      layout = cbind(V(marvel_network)$x, V(marvel_network)$y),
      vertex.label.family = "Marvel",
-     vertex.label.cez = 0.5) # Adjust label size if needed
+     vertex.label.cez = 0.5, # Adjust label size if needed
+     vertex.label.color = "black") 
 
 par(family = "Marvel")
 title("Marvel Partnerships Network", cex.main = 1.2)
@@ -216,7 +217,7 @@ title("Marvel Partnerships Network", cex.main = 1.2)
 # Add legend
 legend("topleft",
        legend = c("Heroes (0)", "Villains (1)", "Neither (2)"),
-       col = c("lightblue", "tomato", "forestgreen"),
+       col = c("#B40000", "#0033A0", "#3C9A3F"),
        pch = 16,
        bty = "y",
        cex = 0.8,  # Adjust legend text size if needed
@@ -244,7 +245,7 @@ cat("Marvel Network Nodes:", num_nodes, "\nMarvel Network Links:", num_links, "\
 bp_nodes_links <- barplot(c(num_nodes, num_links), 
               names.arg = c("Nodes", "Links"), 
               main = "Marvel Network Size", 
-              col = c("#7fcdbb", "#2c7fb8"),  
+              col = c("#D6A400", "#6E0B75"),  
               ylim = c(0, max(num_nodes, num_links) * 1.3))  
 text(bp_nodes_links, c(num_nodes, num_links) / 2,  
      labels = c(num_nodes, num_links), col = "white", cex = 1.2)
@@ -293,11 +294,11 @@ This also means that there are no dominant hubs.
 # distribution of partnership numbers (linear-linear)
 
 degrees <- degree(marvel_network, mode = "all")
-hist(degrees, main = "Degree Distribution", xlab = "Number of Partnerships", col = "#addd8e")
+hist(degrees, main = "Degree Distribution", xlab = "Number of Partnerships", col = "#B40000")
 
 # log-log
 
-plot(table(degrees), log = "xy", main = "Degree Distribution (Log-Log)", xlab = "Degree", ylab = "Frequency", pch = 16, col = "tomato")
+plot(table(degrees), log = "xy", main = "Degree Distribution (Log-Log)", xlab = "Degree", ylab = "Frequency", pch = 16, col = "#0033A0")
 
 max_degree <- max(degrees)
 
@@ -308,7 +309,7 @@ max_degree <- max(degrees)
 
 # Plot histogram of degree distribution
 ggplot(data.frame(degree = degrees), aes(x = degree)) +
-  geom_histogram(binwidth = 1, fill = "#addd8e", color = "black", alpha = 0.7) +
+  geom_histogram(binwidth = 1, fill = "#B40000", color = "black", alpha = 0.7) +
   labs(title = "Degree Distribution", x = "Number of Partnerships", y = "Frequency") +
   theme_minimal() +
   theme(plot.title = element_text(family = "Marvel", size = 16))
@@ -354,7 +355,7 @@ V(marvel_network)$degree <- degree(marvel_network)
 ggraph(marvel_network, layout = "fr") +
   geom_edge_link(alpha = 0.5) +
   geom_node_point(aes(size = degree, color = degree), alpha = 0.7) +
-  scale_color_gradient(low = "blue", high = "red") +
+  scale_color_gradient(low = "#0033A0", high = "#B40000") +
   theme_minimal() +
   labs(title = "Assortativity Visualization", color = "Degree") +
   theme(plot.title = element_text(family = "Marvel", size = 16))
@@ -432,7 +433,7 @@ data <- data.frame(Network = c("Original", "Rewired"),
 ggplot(data, aes(x = Network, y = Clustering, fill = Network)) +
   geom_col(width = 0.5) +
   geom_text(aes(label = round(Clustering, 3)), vjust = -0.5) +
-  scale_fill_manual(values = c("Original" = "#C6E2FF", "Rewired" = "#EEE685")) +
+  scale_fill_manual(values = c("Original" = "#3C9A3F", "Rewired" = "#D6A400")) +
   labs(title = "Clustering Coefficient Comparison", y = "Clustering Coefficient") +
   theme_minimal()
 ```
@@ -460,7 +461,8 @@ ego_net <- make_ego_graph(marvel_network, order = 1, nodes = max_closeness_node)
 plot(ego_net,
      vertex.label = V(ego_net)$character_name,
      vertex.size = 5,
-     vertex.color = "gold",
+     vertex.color = "#6E0B75",
+     vertex.label.color = "black",
      edge.color = "gray30",
      main = paste("Neighborhood of:", V(marvel_network)$character_name[max_closeness_node]))
 ```
