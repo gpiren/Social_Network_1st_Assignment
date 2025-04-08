@@ -304,16 +304,6 @@ max_degree <- max(degrees)
 
 ```
 
-```{r}
-# it looks a little nicer
-
-# Plot histogram of degree distribution
-ggplot(data.frame(degree = degrees), aes(x = degree)) +
-  geom_histogram(binwidth = 1, fill = "#B40000", color = "black", alpha = 0.7) +
-  labs(title = "Degree Distribution", x = "Number of Partnerships", y = "Frequency") +
-  theme_minimal() +
-  theme(plot.title = element_text(family = "Marvel", size = 16))
-```
 
 **What is the clustering coefficient (transitivity) in the network?**
 
