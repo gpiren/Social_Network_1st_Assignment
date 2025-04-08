@@ -94,6 +94,9 @@ Initially, we have two datasets separately for nodes and links. Later on, they w
 
 ## Data cleaning
 
+Let's read both datasets, treating text as characters (not factors), and ensuring quotes and missing data are handled properly.
+
+
 ```{r}
 # to get proper x and y coordinates
 
@@ -102,9 +105,12 @@ marvel_nodes$pos_y <- as.numeric(str_extract_all(marvel_nodes$X_pos, "-?\\d+\\.\
 
 # we don't need the X_pos anymore
 marvel_nodes$X_pos <- NULL
+
 ```
 
-### Renaming columns for better readability
+### Renaming columns
+
+To improve readability, we will rename certain columns in both datasets. After that, we will remove any alternative names or descriptions that appear in parentheses following a character’s name.
 
 ```{r}
 
@@ -117,6 +123,9 @@ marvel_nodes <- marvel_nodes |>
 marvel_links <- marvel_links |> 
   rename(source = X..source,
          target = target)
+
+# let's get rid of anything that is in parentheses in the character_name columns
+marvel_nodes$character_name <- gsub(" \\(.*?\\)", "", marvel_nodes$character_name)
 ```
 
 ## Plot
@@ -136,10 +145,10 @@ For the font of use
 
 ```{r message=FALSE, warning=FALSE}
 
-font_import(pattern = "Marvel")  # Looks for "Marvel" in filenames
-loadfonts()  # Registers the fonts with R
+font_import(pattern = "Marvel") 
+loadfonts() 
 
-# Set font globally
+# setting font globally
 par(family = "Marvel")
 
 ```
@@ -160,7 +169,6 @@ For the colours, we created a unique palette using the colours for the main Marv
 
 
 ```{r message=FALSE, warning=FALSE}
-# A consistent color schemes
 
 # defining a color for each group - heroes '0', villains '1', and neither '2'
 
@@ -191,24 +199,24 @@ legend("topleft",
 ```{r}
 # plot with labels for the biggest nodes
 
-# Calculate the degree of each node
+# the degree of each node
 degrees <- degree(marvel_network)
 
-# Determine a threshold for "biggest" nodes, e.g., top 10%
+# determining a threshold for "biggest" nodes
 threshold <- quantile(degrees, 0.98)
 
-# Identify nodes with degree above the threshold
+# identifying nodes with degree above our threshold
 big_nodes <- V(marvel_network)[degrees > threshold]$character_name
 
-# Plot the network with labels for the biggest nodes
+# plotting the network with labels for the biggest nodes
 plot(marvel_network,
      vertex.label = ifelse(degrees > threshold, V(marvel_network)$character_name, NA),
-     vertex.size = degrees / max(degrees) * 10,  # Scale node size by degree
+     vertex.size = degrees / max(degrees) * 10,  
      edge.color = "gray15",
      vertex.color = group_colors[as.character(V(marvel_network)$group)],
      layout = cbind(V(marvel_network)$x, V(marvel_network)$y),
      vertex.label.family = "Marvel",
-     vertex.label.cez = 0.5, # Adjust label size if needed
+     vertex.label.cez = 0.5,
      vertex.label.color = "black") 
 
 par(family = "Marvel")
@@ -220,8 +228,8 @@ legend("topleft",
        col = c("#B40000", "#0033A0", "#3C9A3F"),
        pch = 16,
        bty = "y",
-       cex = 0.8,  # Adjust legend text size if needed
-       text.font = 2)   # Use bold font for legend text
+       cex = 0.8,  
+       text.font = 2) 
 ```
 
 **4. What is the number of nodes and links?**
@@ -338,10 +346,9 @@ cat("Assortativity (degree):", assortativity_degree, "\n")
 Visually:
 
 ```{r}
-# Calculate degrees
+# degrees
 V(marvel_network)$degree <- degree(marvel_network)
 
-# Plot using ggraph
 ggraph(marvel_network, layout = "fr") +
   geom_edge_link(alpha = 0.5) +
   geom_node_point(aes(size = degree, color = degree), alpha = 0.7) +
