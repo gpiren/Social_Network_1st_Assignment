@@ -31,7 +31,7 @@ library(ggraph) # ultimately, might not use it. check at the end
 library(tidygraph) # ultimately, might not use it. check at the end
 library(ggrepel)
 library(extrafont)
-
+library(tibble)
 ```
 
 # Questions
@@ -120,11 +120,16 @@ marvel_nodes <- marvel_nodes |>
   rename(id = X..index,
          character_name = id,
          x = pos_x,
-         y = pos_y)
+         y = pos_y) |> 
+  mutate(id = id + 1) # for best indexing practice
 
 marvel_links <- marvel_links |> 
   rename(source = X..source,
          target = target)
+
+marvel_links <- marvel_links |> 
+  mutate(source = source + 1,
+         target = target + 1)
 
 # let's get rid of anything that is in parentheses in the character_name columns
 marvel_nodes$character_name <- gsub(" \\(.*?\\)", "", marvel_nodes$character_name)
@@ -132,10 +137,22 @@ marvel_nodes$character_name <- gsub(" \\(.*?\\)", "", marvel_nodes$character_nam
 
 ### Plot
 
+Plotting the network, without distinguishing between heroes, villains, and neutral characters.
+
 ```{r}
 marvel_network <- graph_from_data_frame(d = marvel_links, vertices = marvel_nodes, directed = FALSE)
 
-plot(marvel_network, vertex.label = V(marvel_network)$character_name, vertex.size = 5, edge.color = "gray")
+etiqueta <- ifelse(degree(marvel_network) > 5, V(marvel_network)$character_name, "")
+
+# Plot the network
+plot(marvel_network,
+     vertex.size = degree(marvel_network),  # Node size by degree
+     edge.width = 1,  # No edge value attribute, set to constant
+     vertex.color = "lightblue",  # No colour attribute, use a constant color
+     vertex.label = etiqueta,
+     vertex.label.family = "Marvel",  # Use your font
+     vertex.label.dist = 1,
+     vertex.label.cex = 1.0)
 
 save(marvel_network, file = "marvel_network.rda")
 ```
@@ -182,7 +199,7 @@ V(marvel_network)$group <- marvel_nodes$group
 
 plot(marvel_network, 
      vertex.label = NA,                      
-     vertex.size = 3,                        # node size
+     vertex.size = 5,                        # node size
      edge.color = "gray15",                  # link line color
      vertex.color = group_colors[as.character(V(marvel_network)$group)],  # colors by group
      layout = cbind(V(marvel_network)$x, V(marvel_network)$y))  # for the coordinates
@@ -197,6 +214,8 @@ legend("topleft",
        bty = "y")
 ```
 
+
+Let's see the characters that are represented by bigger nodes, in other words, the ones with most partnerships.
 
 ```{r}
 # plot with labels for the biggest nodes
@@ -332,6 +351,7 @@ cat("Clustering coefficient:", clustering_coeff, "\n")
 ## What is the assortativity (degree) in the network?
 
 Assortativity measures if nodes with similar degrees connect (positive value) or if high-degree nodes connect to low-degree ones (negative value).
+
 As explained earlier, we use 'directed = FALSE' because our network is bidirectional, meaning that a link (partnership) requires two parties.
 
 The result (assortativity degree of -0.011047) shows that in the Marvel network, characters with high numbers of partnerships slightly tend to connect with those with fewer partnerships, but the effect is very weak (because it is very close to 0), almost random.
@@ -347,103 +367,89 @@ cat("Assortativity (degree):", assortativity_degree, "\n")
 
 Visually:
 
+
+!!!!!!!! I changed Au's plot here because something was causing a fatal error in my computer. We can try to work with the previous plot because it was prettier. 
+
 ```{r}
-# degrees
-V(marvel_network)$degree <- degree(marvel_network)
+V(marvel_network)$degree <- degree(marvel_network, mode = "all")
 
-ggraph(marvel_network, layout = "fr") +
-  geom_edge_link(alpha = 0.5) +
-  geom_node_point(aes(size = degree, color = degree), alpha = 0.7) +
-  scale_color_gradient(low = "#0033A0", high = "#B40000") +
-  theme_minimal() +
-  labs(title = "Assortativity Visualization", color = "Degree") +
-  theme(plot.title = element_text(family = "Marvel", size = 16))
-
+# Plot with igraph using a different layout
+plot(marvel_network, 
+     layout = layout_with_kk(marvel_network),  # kamada-kawaii layout
+     vertex.size = V(marvel_network)$degree / 2,
+     vertex.color = colorRampPalette(c("#0033A0", "#B40000"))(max(V(marvel_network)$degree) + 1)[V(marvel_network)$degree + 1],
+     vertex.label = NA,
+     edge.alpha = 0.5,
+     main = "Assortativity Visualization")
 ```
 
 ## Using the Louvain method, does the network have a community structure?
 
-Yes.
-The network shows a community structure, as indicated by the Louvain community detection plot where nodes are grouped into distinct color clusters, suggesting characters form groups with more connections within clusters than between them.
+Initially we wanted to check if there's a community structure with and without edge weights. However, our network is not one that shows the strength or times of occurrence of edges, rather, it only shows the number of partnerships that existed at some point. That is why we decided to assess the community structure with 'weights = NULL'.
+
+So, yes, the network exhibits a clear community structure, as shown in the plot where nodes are grouped into distinct clusters with distinct colors and labeled IDs, indicating that characters form close groups with more internal connections than external ones, a hallmark of community structure. 
+
 
 ```{r}
 set.seed(616)
+comm_without_weights <- cluster_louvain(marvel_network,weights=NULL)
 
-# community detection using Louvain method
-louvain_communities <- cluster_louvain(marvel_network)
-
-# community membership for each node
-V(marvel_network)$community <- membership(louvain_communities)
-
-# network community plot
-plot(marvel_network, 
-     vertex.label = NA, 
-     vertex.size = 3, 
-     vertex.color = V(marvel_network)$community,
-     layout = layout_with_fr(marvel_network),
-     main = "Louvain Community Detection",
-     fontfamily = "Marvel")
-
+sizes(comm_without_weights)
 ```
+
+Plotting the community structure
 
 ```{r}
 
-set.seed(616)
-
-# Community detection using Louvain method
-louvain_communities <- cluster_louvain(marvel_network)
-
-# Community membership for each node
-V(marvel_network)$community <- membership(louvain_communities)
-
-# Dynamically create a color palette based on actual community IDs
-unique_communities <- sort(unique(V(marvel_network)$community))
-custom_colors <- sample(c("#B40000", "#0033A0", "#3C9A3F", "#D6A400", "#6E0B75"), length(unique_communities), replace = TRUE)
-names(custom_colors) <- as.character(unique_communities)
-
-# Network community plot with custom colors
-plot(marvel_network,
-     vertex.label = NA,
-     vertex.size = 3,
-     vertex.color = custom_colors[as.character(V(marvel_network)$community)],
-     layout = layout_with_fr(marvel_network),
-     main = "Louvain Community Detection",
-     fontfamily = "Marvel")
-
-# Add legend
-legend("topleft",
-       legend = paste("Community", names(custom_colors)),
-       col = custom_colors,
-       pch = 16,
-       bty = "n",
-       cex = 0.8,
-       title = "Communities")
-
+plot(comm_without_weights, marvel_network)
 ```
+
+Let's check the community structure with weights just in case. Results are pretty much the same. Does this most probably imply that the network does not suit for a weighted assessment of community structure?
+
+```{r}
+comm_with_weights <- cluster_louvain(marvel_network,weights = E(marvel_network)$size)
+sizes(comm_with_weights)
+
+# plotting
+
+plot(comm_with_weights, marvel_network)
+```
+
+-----------
+
 
 
 ## If so, what is its modularity?
 
-Modularity score helps us decide to what extent the community structure demonstrates strong ties.
+The modularity score of 0.9116242 indicates a very strong community structure in the Marvel network, as values close to 1 suggest that the Louvain method found highly distinct groups where characters are much more connected within their communities than expected in a random network. 
 
-The modularity score of 0.92 (0.9116242), obtained using the Louvain community detection algorithm, indicates a very strong community structure in the Marvel network.
-This suggests that characters tend to form highly interconnected groups with few connections between groups — likely reflecting narrative-based teams or story arcs within the Marvel universe.
+This aligns with the visual clustering in our plot, confirming that the network has well-defined, meaningful communities.
 
-Characters tend to form tight clusters, most partnerships occurring within those clusters, and there are fewer cross-cluster partnerships than you would expect by chance.
 
 ```{r}
 set.seed(616)
-# modularity value of the communities
-modularity_value <- modularity(louvain_communities)
+modularity(comm_without_weights)
 
-cat("Modularity of the Louvain community structure:", modularity_value, "\n")
 ```
+
+Below plot visualizes the network with communities from comm_without_weights, using the Kamada-Kawai layout ll, coloring nodes by community, and omitting vertex labels for clarity.
+
+The Kamada-Kawai layout tries to put characters closer if they’re partners and further apart if they’re not, making the plot and structure easier to understand.
+
+
+```{r}
+
+ll <- layout.kamada.kawai(marvel_network)
+plot(comm_without_weights,marvel_network,layout=ll,vertex.label="")
+
+```
+
 
 ## Test that the clustering coefficient in the network cannot be statistically explained by a configuration model in which the nodes have the same degree distribution as the original.
 
 After generating a degree-preserving rewired version of the Marvel network, we find that the clustering coefficient drops from 0.219 (the original Marvel network clustering coefficient) to 0.004 (the rewired graph clustering coefficient).
-This significant decrease suggests that the clustering structure observed in the real network is not explained by the degree distribution alone.
-Instead, it reflects meaningful group structures, such as narrative teams or recurring character associations in the Marvel universe.
+
+This significant decrease suggests that the clustering structure observed in the real network is not explained by the degree distribution alone. Instead, it reflects meaningful group structures, such as narrative teams or recurring character associations in the Marvel universe.
 
 The original Marvel network has much higher clustering than its degree-preserving random counterpart: characters that are connected to the same person tend to be connected to each other — suggesting intentional grouping or narrative structure (such as teams like Avengers or X-Men).
 
@@ -475,32 +481,113 @@ ggplot(data, aes(x = Network, y = Clustering, fill = Network)) +
 
 ## Visualize the neighborhood of the node with the largest centrality (closeness).
 
-The neighbourhood of the node with the largest centrality belongs to Baron Zemo, a character which is not as popular and known as some others such as Spider-Man, Superman, and Captain America.
+igraph package has several ways to calculate centrality of nodes and edges. Let's try them and see how the results differ.
 
-The reason why Baron Zemo appears as the node with the largest centrality is likely due to its strategic location.
-Although the character has few partnerships (low degree), his centrality in the network makes him a strategic person, allowing him to reach out to many characters in shortest paths.
-It is also very likely that he is close to the core of the network, which has short paths to other hubs in the network.
+### PageRank: calculates Google’s PageRank for vertices
+
+Below chunk calculates the PageRank scores for nodes in marvel_network, which measures node importance based on connections — nodes with more links from other important nodes get higher scores. 
+
+The results show Spider-Man, Captain America, Red Skull, Selene, Unicorn, and Grim Reaper as the top 6, indicating they are the most influential characters in the network, likely due to their connections to other highly connected characters, such as Spider-Man and Captain America linking to many key Avengers or Red Skull to major villains.
+
 
 ```{r}
 
-# closeness centrality for each node
-closeness_scores <- closeness(marvel_network, normalized = TRUE)
+# pageRank centrality computation
+page_rank_marvel <- page_rank(marvel_network)
 
-# the node with the highest closeness
-max_closeness_node <- which.max(closeness_scores)
+# top characters
 
-# the ego network (1-step neighborhood)
-ego_net <- make_ego_graph(marvel_network, order = 1, nodes = max_closeness_node)[[1]]
-
-# plot
-plot(ego_net,
-     vertex.label = V(ego_net)$character_name,
-     vertex.size = 5,
-     vertex.color = "#6E0B75",
-     vertex.label.color = "black",
-     edge.color = "gray30",
-     main = paste("Neighborhood of:", V(marvel_network)$character_name[max_closeness_node]))
+top_pr <- page_rank_marvel$vector %>% sort(decreasing = TRUE) %>% head()
+data.frame(
+  character_name = V(marvel_network)$character_name[as.numeric(names(top_pr))],
+  page_rank = top_pr
+)
 ```
+
+
+### Closeness: distance (steps) to any other vertex
+
+Closeness calculates the closeness centrality for each node in the network, measuring how close a node is to all others. Higher values mean closer, fewer steps to reach others. 
+
+The results, with closeness of 1 for Silver Sable, U.S. Agent, Hercules, Sabretooth, Mojo, and Trevor Fitzroy, indicate these characters have the highest closeness, meaning they are in small, isolated components, where they are directly connected to all others in their component, inflating their scores—recompute on the largest component for more meaningful results.
+
+
+THERE ARE PROBABLY ISSUE IN THIS PART. LOOK INTO THIS LATER. PERFECT CLOSENESS SCORES MIGHT INDICATE ISSUES 
+
+
+```{r}
+# closeness  computation
+closeness_marvel <- closeness(marvel_network)
+
+# to get the top characters
+
+top_closeness <- 1/closeness_marvel %>% sort(decreasing = TRUE) %>% head()
+data.frame(
+  character_name = V(marvel_network)$character_name[as.numeric(names(top_closeness))],
+  inverse_closeness = top_closeness
+)
+
+```
+
+
+Betweenness: the number of shortest paths going through a vertex/edge
+
+The results show Venom, Doctor Doom, Spider-Man, Puppet Master, Krang, and Attuma as the top 6, meaning they are key bridges in the network, frequently connecting other characters.
+
+```{r}
+
+# betweenness centrality computation
+betweenness_marvel <- betweenness(marvel_network)
+
+# top characters
+top_betweenness <- betweenness_marvel %>% sort(decreasing = TRUE) %>% head()
+data.frame(
+  character_name = V(marvel_network)$character_name[as.numeric(names(top_betweenness))],
+  betweenness = top_betweenness
+)
+```
+
+
+#### Calculate the centrality of the characters in the Marvel network using the degree, betweenness and page rank.
+
+Page Rank: Spider-Man, Captain America, Red Skull, Selene, Unicorn, Grim Reaper
+
+Closeness: Silver Sable, U.S. Agent, Hercules, Sabretooth, Mojo, Trevor Fitzroy (Likely to be incorrect, because they have closeness scores of 1, which is a perfect score)
+
+Betweenness: Venom - Doctor Doom - Spider-Man - Puppet Master - Krang - Attuma
+
+```{r}
+# Calculate centrality measures
+cent_betw <- betweenness(marvel_network, weights = E(marvel_network)$size)
+cent_page <- page_rank(marvel_network, weights = E(marvel_network)$size)$vector
+cent_close <- closeness(marvel_network)
+
+# Create a data frame with all measures
+centrality_df <- data.frame(
+  character_name = V(marvel_network)$character_name,
+  betweenness = cent_betw,
+  page_rank = cent_page,
+  closeness = cent_close
+)
+
+
+# top 6 by PageRank
+top_pagerank <- centrality_df[order(-centrality_df$page_rank), ][1:6, c("character_name", "page_rank")]
+print("Top 6 by PageRank:")
+print(top_pagerank)
+
+# top 6 by closeness
+top_closeness <- centrality_df[order(-centrality_df$closeness), ][1:6, c("character_name", "closeness")]
+print("Top 6 by Closeness:")
+print(top_closeness)
+
+# top 6 by betweenness
+top_betweenness <- centrality_df[order(-centrality_df$betweenness), ][1:6, c("character_name", "betweenness")]
+print("Top 6 by Betweenness:")
+print(top_betweenness)
+
+```
+
 
 
 # Conclusion
