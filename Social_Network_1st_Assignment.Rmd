@@ -447,7 +447,7 @@ plot(comm_without_weights,marvel_network,layout=ll,vertex.label="")
 
 ## Test that the clustering coefficient in the network cannot be statistically explained by a configuration model in which the nodes have the same degree distribution as the original.
 
-After generating a degree-preserving rewired version of the Marvel network, we find that the clustering coefficient drops from 0.219 (the original Marvel network clustering coefficient) to 0.004 (the rewired graph clustering coefficient).
+After generating a degree-preserving rewired version of the Marvel network across 100 random times, we find that the clustering coefficient drops from 0.219 (the original Marvel network clustering coefficient) to 0.006382979 (the mean of the simulated clusterings). The p-value of 0 feels fishy in the beginning, however, it only indicates that none of the simulations were as high as or higher than the original one.
 
 This significant decrease suggests that the clustering structure observed in the real network is not explained by the degree distribution alone. Instead, it reflects meaningful group structures, such as narrative teams or recurring character associations in the Marvel universe.
 
@@ -458,24 +458,36 @@ In the rewired version, where the number of connections for each character is pr
 ```{r}
 set.seed(616)
 
-rewired_graph <- rewire(marvel_network, with = keeping_degseq(niter = ecount(marvel_network) * 10))
+sim_clustering <- replicate(100, {
+  g_rewired <- rewire(marvel_network, with = keeping_degseq(niter = ecount(marvel_network) * 10))
+  transitivity(g_rewired, type = "global")
+})
 
-# the clustering coefficient for rewired version
-rewired_transitivity <- transitivity(rewired_graph, type = "global")
-cat("Clustering coefficient of rewired graph:", rewired_transitivity, "\n")
+observed_clustering <- transitivity(marvel_network, type = "global")
+
+# computing p-value, meaning the proportion of simulated clustering ≥ observed)
+p_val <- mean(sim_clustering >= observed_clustering)
+
+cat("Observed clustering:", observed_clustering, "\n")
+cat("Mean simulated clustering:", mean(sim_clustering), "\n")
+cat("p-value:", p_val, "\n")
 ```
 
 ### Comparing the two networks
 
 ```{r}
 
-data <- data.frame(Network = c("Original", "Rewired"), 
-                   Clustering = c(clustering_coeff, rewired_transitivity))
+data <- data.frame(
+  Network = c("Original", "Simulated Mean"),
+  Clustering = c(observed_clustering, mean(sim_clustering))
+)
+
 ggplot(data, aes(x = Network, y = Clustering, fill = Network)) +
   geom_col(width = 0.5) +
   geom_text(aes(label = round(Clustering, 3)), vjust = -0.5) +
-  scale_fill_manual(values = c("Original" = "#3C9A3F", "Rewired" = "#D6A400")) +
-  labs(title = "Clustering Coefficient Comparison", y = "Clustering Coefficient") +
+  scale_fill_manual(values = c("Original" = "#3C9A3F", "Simulated Mean" = "#D6A400")) +
+  labs(title = "Clustering Coefficient: Observed vs. Simulated",
+       y = "Clustering Coefficient") +
   theme_minimal()
 ```
 
