@@ -600,6 +600,124 @@ print(top_betweenness)
 
 ```
 
+Harmonic Centrality
+
+As suggested, we decided to calculate the harmonic centrality for our network. We did so using the harmonic_centrality function from the igraph package. Harmonic centrality is a measure that gives higher scores to nodes that are closer to other nodes in the network. It is particularly useful in networks where shortest path calculations are important.
+
+*!!!! The harmonic centrality scores are added to your existing centrality_df data frame, allowing you to compare them with other centrality measures.*
+
+The code identifies and prints the top 6 characters by harmonic centrality.
+
+```{r}
+# Calculate harmonic centrality
+cent_harmonic <- harmonic_centrality(marvel_network)
+
+# Update the centrality data frame with harmonic centrality
+centrality_df$harmonic_centrality <- cent_harmonic
+
+# Display the top 6 characters by harmonic centrality
+top_harmonic <- centrality_df[order(-centrality_df$harmonic_centrality), ][1:6, c("character_name", "harmonic_centrality")]
+print("Top 6 by Harmonic Centrality:")
+print(top_harmonic)
+
+
+```
+
+We can use a scatter plot or a bar plot to visualize the harmonic centrality of nodes. 
+We used a scatter plot with ggplot2 to compare harmonic centrality with other centrality measures.
+
+This plot compares harmonic centrality with closeness centrality, with nodes colored by their PageRank. This allows us to see how these centrality measures relate to each other.
+Nodes with high harmonic centrality and closeness centrality are likely important connectors in the network.
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+
+# Scatter plot to visualize harmonic centrality vs. other centrality measures
+ggplot(centrality_df, aes(x = harmonic_centrality, y = closeness, color = page_rank)) +
+  geom_point(alpha = 0.6, size = 3) +
+  labs(title = "Harmonic Centrality vs. Closeness Centrality",
+       x = "Harmonic Centrality",
+       y = "Closeness Centrality",
+       color = "PageRank") +
+  theme_minimal() +
+  theme(plot.title = element_text(family = "Marvel", size = 16))
+
+```
+
+Alternatively, we can visualize the top nodes by harmonic centrality through a bar plot.
+This plot shows the top 10 characters by harmonic centrality, allowing us to easily identify the most central nodes.
+
+```{r}
+# Bar plot to visualize top nodes by harmonic centrality
+top_harmonic_plot <- centrality_df[order(-centrality_df$harmonic_centrality), ][1:10, ]
+
+ggplot(top_harmonic_plot, aes(x = reorder(character_name, harmonic_centrality), y = harmonic_centrality)) +
+  geom_bar(stat = "identity", fill = "#B40000") +
+  coord_flip() +
+  labs(title = "Top 10 Characters by Harmonic Centrality",
+       x = "Character Name",
+       y = "Harmonic Centrality") +
+  theme_minimal() +
+  theme(plot.title = element_text(family = "Marvel", size = 16))
+
+```
+
+# Comparison
+
+To visually compare the different centrality measures, we can create a series of plots that highlight how each measure ranks the characters in your network.
+These visualizations will help us gain a comprehensive understanding of how different centrality measures rank the characters in our network and how these measures relate to each other.
+
+
+*Scatter Plot Matrix*
+A scatter plot matrix can help us compare pairs of centrality measures to see how they correlate with each other. This can be done using the GGally package, which provides a convenient way to create pairwise scatter plots.
+```{r}
+library(GGally)
+
+# Select relevant columns for the scatter plot matrix
+centrality_df_melted <- melt(centrality_df, id.vars = "character_name")
+
+# Create a scatter plot matrix
+ggpairs(centrality_df[, c("character_name", "betweenness", "page_rank", "closeness", "harmonic_centrality")],
+        title = "Centrality Measures Comparison")
+
+```
+
+*Radar Chart*
+A radar chart can be used to visualize the centrality measures for the top characters across all metrics. This allows you to see which characters are consistently ranked high across different measures.
+```{r}
+library(fmsb)
+
+# Select top characters based on one centrality measure (e.g., harmonic centrality)
+top_characters <- centrality_df[order(-centrality_df$harmonic_centrality), ][1:6, ]
+
+# Create a radar chart
+radar(as.matrix(top_characters[, c("betweenness", "page_rank", "closeness", "harmonic_centrality")]),
+      grouping = top_characters$character_name,
+      title = "Centrality Measures for Top Characters",
+      max = 1, min = 0)
+legend("topright", legend = top_characters$character_name, col = 1:6, pch = 1, title = "Characters")
+
+```
+
+*Bar Plot Comparison*
+A bar plot can be used to compare the rankings of characters across different centrality measures. This can help identify which characters are most central according to each measure.
+```{r}
+# Reshape the data for plotting
+library(tidyr)
+centrality_long <- pivot_longer(centrality_df, cols = c("betweenness", "page_rank", "closeness", "harmonic_centrality"),
+                                names_to = "measure", values_to = "score")
+
+# Create a bar plot
+ggplot(centrality_long, aes(x = reorder(character_name, score), y = score, fill = measure)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ measure, scales = "free") +
+  labs(title = "Centrality Measures Comparison", x = "Character", y = "Score") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
 
 
 # Conclusion
