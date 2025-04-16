@@ -32,6 +32,8 @@ library(tidygraph) # ultimately, might not use it. check at the end
 library(ggrepel)
 library(extrafont)
 library(tibble)
+library(fmsb)
+library(GGally)
 ```
 
 # Questions
@@ -521,10 +523,7 @@ data.frame(
 
 Closeness calculates the closeness centrality for each node in the network, measuring how close a node is to all others. Higher values mean closer, fewer steps to reach others. 
 
-The results, with closeness of 1 for Silver Sable, U.S. Agent, Hercules, Sabretooth, Mojo, and Trevor Fitzroy, indicate these characters have the highest closeness, meaning they are in small, isolated components, where they are directly connected to all others in their component, inflating their scores—recompute on the largest component for more meaningful results.
-
-
-THERE ARE PROBABLY ISSUE IN THIS PART. LOOK INTO THIS LATER. PERFECT CLOSENESS SCORES MIGHT INDICATE ISSUES 
+The results, with closeness of 1 for Silver Sable, U.S. Agent, Hercules, Sabretooth, Mojo, and Trevor Fitzroy, indicate these characters have the highest closeness, meaning they are in small, isolated components, where they are directly connected to all others in their component, inflating their scores. We consider that these characters have perfect centrality scores because the closeness method assesses their local communities, rather than the network as a whole. 
 
 
 ```{r}
@@ -542,9 +541,9 @@ data.frame(
 ```
 
 
-Betweenness: the number of shortest paths going through a vertex/edge
+Betweenness method looks into the number of shortest paths going through an edge.
 
-The results show Venom, Doctor Doom, Spider-Man, Puppet Master, Krang, and Attuma as the top 6, meaning they are key bridges in the network, frequently connecting other characters.
+The results show Venom, Doctor Doom, Spider-Man, Puppet Master, Krang, and Attuma as the top six characters, meaning they are key bridges in the network, frequently connecting other characters.
 
 ```{r}
 
@@ -560,7 +559,7 @@ data.frame(
 ```
 
 
-#### Calculate the centrality of the characters in the Marvel network using the degree, betweenness and page rank.
+#### Calculate the centrality of the characters in the Marvel network using the page rank, closeness, betweenness.
 
 Page Rank: Spider-Man, Captain America, Red Skull, Selene, Unicorn, Grim Reaper
 
@@ -600,11 +599,9 @@ print(top_betweenness)
 
 ```
 
-Harmonic Centrality
+#### Harmonic Centrality
 
 As suggested, we decided to calculate the harmonic centrality for our network. We did so using the harmonic_centrality function from the igraph package. Harmonic centrality is a measure that gives higher scores to nodes that are closer to other nodes in the network. It is particularly useful in networks where shortest path calculations are important.
-
-*!!!! The harmonic centrality scores are added to your existing centrality_df data frame, allowing you to compare them with other centrality measures.*
 
 The code identifies and prints the top 6 characters by harmonic centrality.
 
@@ -663,19 +660,70 @@ ggplot(top_harmonic_plot, aes(x = reorder(character_name, harmonic_centrality), 
 
 ```
 
-# Comparison
+### The neighbourhood of the most central node - VENOM
 
-To visually compare the different centrality measures, we can create a series of plots that highlight how each measure ranks the characters in your network.
-These visualizations will help us gain a comprehensive understanding of how different centrality measures rank the characters in our network and how these measures relate to each other.
+According to our harmonic centrality measure, Venom is the most central character in the entire Marvel network. Indeed, if we zoom in even on his 1-step neighbourhood, we see that he formed partnerships with heroes (Spider-Man), villains (Red Skull, Doctor Doom, Carnage), and neutral characters (Magneto, Eddie Brock).
 
+Note that Eddie Brock is the human form of Venom, who is considered to be (or to have become) a neutral or antihero character.
 
-*Scatter Plot Matrix*
-A scatter plot matrix can help us compare pairs of centrality measures to see how they correlate with each other. This can be done using the GGally package, which provides a convenient way to create pairwise scatter plots.
 ```{r}
-library(GGally)
+venom_id <- marvel_nodes$id[marvel_nodes$character_name == "Venom"]
+print(venom_id)
+
+# venom's node in the network
+venom_node <- which(V(marvel_network)$name == as.character(venom_id))
+
+# 1-step neighborhood for venom's node
+venom_neighborhood <- ego(marvel_network, order = 1, nodes = venom_node, mode = "all")[[1]]
+
+# subgraph for venom's neighborhood
+venom_subgraph <- induced_subgraph(marvel_network, venom_neighborhood)
+
+# character ids to character names for better labels
+V(venom_subgraph)$label <- marvel_nodes$character_name[match(V(venom_subgraph)$name, marvel_nodes$id)]
+
+
+node_groups <- marvel_nodes$group[match(V(venom_subgraph)$name, marvel_nodes$id)]
+
+# colors for hero, villain, and neutral
+group_colors <- c("hero" = "#B40000", "villain" = "#0033A0", "neutral" = "#3C9A3F")
+
+# mapping the group values to colors
+vertex_colors <- ifelse(node_groups == 0, group_colors["hero"], 
+                        ifelse(node_groups == 1, group_colors["villain"], 
+                               group_colors["neutral"]))
+
+# plotting
+
+plot(venom_subgraph,
+     layout = layout,
+     vertex.label = V(venom_subgraph)$label,
+     vertex.label.cex = 0.8,
+     vertex.label.dist = 1.2,
+     vertex.label.degree = pi/4,
+     vertex.color = vertex_colors,
+     vertex.size = 12,
+     main = "Venom's Neighborhood",
+     margin = -0.05)
+```
+
+
+
+#### Comparison
+
+To visually support our choices regarding the different centrality measures, we wanted to create a series of plots that highlight how each measure ranks the characters in the network.
+
+These visualizations helped us gain a comprehensive understanding of how different centrality measures rank the characters in our network and how these measures relate to each other.
+
+
+#### Scatter Plot Matrix
+
+A scatter plot matrix helps us compare pairs of centrality measures to see how they correlate with each other. This can be done using the GGally package, which provides a convenient way to create pairwise scatter plots.
+
+```{r}
 
 # Select relevant columns for the scatter plot matrix
-centrality_df_melted <- melt(centrality_df, id.vars = "character_name")
+centrality_df_melted <- reshape2::melt(centrality_df, id.vars = "character_name")
 
 # Create a scatter plot matrix
 ggpairs(centrality_df[, c("character_name", "betweenness", "page_rank", "closeness", "harmonic_centrality")],
@@ -684,9 +732,8 @@ ggpairs(centrality_df[, c("character_name", "betweenness", "page_rank", "closene
 ```
 
 *Radar Chart*
-A radar chart can be used to visualize the centrality measures for the top characters across all metrics. This allows you to see which characters are consistently ranked high across different measures.
+A radar chart can be used to visualize the centrality measures for the top characters across all metrics. This allows us to see which characters are consistently ranked high across different measures.
 ```{r}
-library(fmsb)
 
 # Select top characters based on one centrality measure (e.g., harmonic centrality)
 top_characters <- centrality_df[order(-centrality_df$harmonic_centrality), ][1:6, ]
@@ -700,8 +747,13 @@ legend("topright", legend = top_characters$character_name, col = 1:6, pch = 1, t
 
 ```
 
-*Bar Plot Comparison*
+#### Bar Plot Comparison 
+
 A bar plot can be used to compare the rankings of characters across different centrality measures. This can help identify which characters are most central according to each measure.
+
+Although some of the labels are not read properly, we can, by looking at the distributions, say that betweenness method yields confusing results by attributing no centrality to most characters whereas closeness method detects most characters as having a centrality score of 1 (which is the perfect score). This is due to the fact that closeness methods sometimes assess characters based on their local communities in the network, rather than the network as a whole, therefore spotting perfect centrality.
+
+Harmonic centrality and PageRank methods seem to provide more robust results, assigning a range of centrality scores across characters. We, upon the suggestion of the Professor, decided earlier to use harmonic centrality to answer
 ```{r}
 # Reshape the data for plotting
 library(tidyr)
