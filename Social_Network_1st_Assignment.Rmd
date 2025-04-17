@@ -707,47 +707,60 @@ plot(venom_subgraph,
      margin = -0.05)
 ```
 
+```{r}
+## AU: I'm trying to create a new code since the previous one gives me an error
+
+# Extract Venom's ID
+venom_id <- marvel_nodes$id[marvel_nodes$character_name == "Venom"]
+print(venom_id)
+
+# Find Venom's Node
+venom_node <- which(V(marvel_network)$name == as.character(venom_id))
+
+# Extract Venom's Neighborhood
+venom_neighborhood <- ego(marvel_network, order = 1, nodes = venom_node, mode = "all")[[1]]
+
+# Create Venom's Subgraph
+venom_subgraph <- induced_subgraph(marvel_network, venom_neighborhood)
+
+# Map Character IDs to Names
+V(venom_subgraph)$label <- marvel_nodes$character_name[match(V(venom_subgraph)$name, marvel_nodes$id)]
+
+# Determine Node Groups
+node_groups <- marvel_nodes$group[match(V(venom_subgraph)$name, marvel_nodes$id)]
+
+# Map Group Values to Colors
+# Ensure node_groups is a numeric vector
+node_groups <- as.numeric(node_groups)
+
+# Define group colors
+group_colors <- c("0" = "#B40000", "1" = "#0033A0", "2" = "#3C9A3F")
+
+# Map group values to colors
+vertex_colors <- group_colors[as.character(node_groups)]
+
+# Plot the Subgraph
+plot(venom_subgraph,
+     layout = layout_with_fr(venom_subgraph),  # Ensure layout is correctly defined
+     vertex.label = V(venom_subgraph)$label,
+     vertex.label.cex = 0.8,
+     vertex.label.dist = 1.2,
+     vertex.label.degree = pi/4,
+     vertex.color = vertex_colors,
+     vertex.size = 12,
+     main = "Venom's Neighborhood",
+     margin = -0.05)
+
+
+```
+
 
 
 #### Comparison
 
-To visually support our choices regarding the different centrality measures, we wanted to create a series of plots that highlight how each measure ranks the characters in the network.
+To visually support our choices regarding the different centrality measures, we wanted to create a plot to highlight how each measure ranks the characters in the network.
 
-These visualizations helped us gain a comprehensive understanding of how different centrality measures rank the characters in our network and how these measures relate to each other.
-
-
-#### Scatter Plot Matrix
-
-A scatter plot matrix helps us compare pairs of centrality measures to see how they correlate with each other. This can be done using the GGally package, which provides a convenient way to create pairwise scatter plots.
-
-```{r}
-
-# Select relevant columns for the scatter plot matrix
-centrality_df_melted <- reshape2::melt(centrality_df, id.vars = "character_name")
-
-# Create a scatter plot matrix
-ggpairs(centrality_df[, c("character_name", "betweenness", "page_rank", "closeness", "harmonic_centrality")],
-        title = "Centrality Measures Comparison")
-
-```
-
-*Radar Chart*
-A radar chart can be used to visualize the centrality measures for the top characters across all metrics. This allows us to see which characters are consistently ranked high across different measures.
-```{r}
-
-# Select top characters based on one centrality measure (e.g., harmonic centrality)
-top_characters <- centrality_df[order(-centrality_df$harmonic_centrality), ][1:6, ]
-
-# Create a radar chart
-radar(as.matrix(top_characters[, c("betweenness", "page_rank", "closeness", "harmonic_centrality")]),
-      grouping = top_characters$character_name,
-      title = "Centrality Measures for Top Characters",
-      max = 1, min = 0)
-legend("topright", legend = top_characters$character_name, col = 1:6, pch = 1, title = "Characters")
-
-```
-
-#### Bar Plot Comparison 
+This visualization helped us gain a comprehensive understanding of how different centrality measures rank the characters in our network and how these measures relate to each other.
 
 A bar plot can be used to compare the rankings of characters across different centrality measures. This can help identify which characters are most central according to each measure.
 
