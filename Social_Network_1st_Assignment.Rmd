@@ -713,5 +713,3 @@ ggplot(centrality_long, aes(x = reorder(character_name, score), y = score, fill 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-
-# 
