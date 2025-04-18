@@ -20,6 +20,8 @@ editor_options:
 
 Through this file, we will reveal the number and nature of the partnerships between heroes, villains, and neutral characters across the Marvel Universe. While doing so, we will try to answer a number of questions that were raised as part of the first homework assignment for the Social Network Analysis. 
 
+![GIF](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmNoeTJwdjF5OTRpZ3dkenA1Zndkbm0xcml6anFoMnM1N295OTgxMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/vBjLa5DQwwxbi/giphy.gif)
+
 ## Acknowledgements
 
 The AI was utilized as a complementary tool to have a better grasp of the concepts and questions across the file. Our interpretations of some of the results were secured through AI perspective. Although we sticked to the in-class exercises and files, some of the plots were created using the AI support. 
@@ -712,3 +714,4 @@ ggplot(centrality_long, aes(x = reorder(character_name, score), y = score, fill 
 
 ```
 
+# 
