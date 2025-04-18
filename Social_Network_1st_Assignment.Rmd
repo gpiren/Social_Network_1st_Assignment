@@ -20,6 +20,10 @@ editor_options:
 
 Through this file, we will reveal the number and nature of the partnerships between heroes, villains, and neutral characters across the Marvel Universe. While doing so, we will try to answer a number of questions that were raised as part of the first homework assignment for the Social Network Analysis. 
 
+## Acknowledgements
+
+The AI was utilized as a complementary tool to have a better grasp of the concepts and questions across the file. Our interpretations of some of the results were secured through AI perspective. Although we sticked to the in-class exercises and files, some of the plots were created using the AI support. 
+
 ## Libraries
 
 ```{r message=FALSE}
@@ -34,6 +38,7 @@ library(extrafont)
 library(tibble)
 library(fmsb)
 library(GGally)
+library(tidyr)
 ```
 
 # Questions
@@ -42,7 +47,7 @@ library(GGally)
 
 Marvel character partnerships, 2018. The dataset can be accessed through this [link](https://networks.skewed.de/net/marvel_partnerships)
 
-## Indicate the number of nodes should be larger than 300 but smaller than 10000.
+## Indicate the number of nodes. It should be larger than 300 but smaller than 10000.
 
 The number of nodes is 350.
 
@@ -59,7 +64,7 @@ cat("Number of nodes:", num_nodes)
 
 ## Import that data and create a graph using R.
 
-Reading the data
+Reading the data first. The original network will be plotted after a quick data description and  cleaning process.
 
 ```{r}
 
@@ -318,6 +323,7 @@ Instead, the degrees (1 to 12) suggest a more random or even connectivity patter
 This also means that there are no dominant hubs.
 
 ```{r}
+#| warning: false
 # we previously calculated the degrees for all nodes:
 
 # print(degrees)
@@ -368,9 +374,6 @@ cat("Assortativity (degree):", assortativity_degree, "\n")
 ```
 
 Visually:
-
-
-!!!!!!!! I changed Au's plot here because something was causing a fatal error in my computer. We can try to work with the previous plot because it was prettier. 
 
 ```{r}
 V(marvel_network)$degree <- degree(marvel_network, mode = "all")
@@ -440,6 +443,7 @@ The Kamada-Kawai layout tries to put characters closer if they’re partners and
 
 
 ```{r}
+#| warning: false
 
 ll <- layout.kamada.kawai(marvel_network)
 plot(comm_without_weights,marvel_network,layout=ll,vertex.label="")
@@ -559,62 +563,23 @@ data.frame(
 ```
 
 
-#### Calculate the centrality of the characters in the Marvel network using the page rank, closeness, betweenness.
-
-Page Rank: Spider-Man, Captain America, Red Skull, Selene, Unicorn, Grim Reaper
-
-Closeness: Silver Sable, U.S. Agent, Hercules, Sabretooth, Mojo, Trevor Fitzroy (Likely to be incorrect, because they have closeness scores of 1, which is a perfect score)
-
-Betweenness: Venom - Doctor Doom - Spider-Man - Puppet Master - Krang - Attuma
-
-```{r}
-# Calculate centrality measures
-cent_betw <- betweenness(marvel_network, weights = E(marvel_network)$size)
-cent_page <- page_rank(marvel_network, weights = E(marvel_network)$size)$vector
-cent_close <- closeness(marvel_network)
-
-# Create a data frame with all measures
-centrality_df <- data.frame(
-  character_name = V(marvel_network)$character_name,
-  betweenness = cent_betw,
-  page_rank = cent_page,
-  closeness = cent_close
-)
-
-
-# top 6 by PageRank
-top_pagerank <- centrality_df[order(-centrality_df$page_rank), ][1:6, c("character_name", "page_rank")]
-print("Top 6 by PageRank:")
-print(top_pagerank)
-
-# top 6 by closeness
-top_closeness <- centrality_df[order(-centrality_df$closeness), ][1:6, c("character_name", "closeness")]
-print("Top 6 by Closeness:")
-print(top_closeness)
-
-# top 6 by betweenness
-top_betweenness <- centrality_df[order(-centrality_df$betweenness), ][1:6, c("character_name", "betweenness")]
-print("Top 6 by Betweenness:")
-print(top_betweenness)
-
-```
-
 #### Harmonic Centrality
 
-As suggested, we decided to calculate the harmonic centrality for our network. We did so using the harmonic_centrality function from the igraph package. Harmonic centrality is a measure that gives higher scores to nodes that are closer to other nodes in the network. It is particularly useful in networks where shortest path calculations are important.
+As suggested, we decided to calculate the harmonic centrality for our characters in the network. We did so using the harmonic_centrality function from the igraph package. Harmonic centrality is a measure that gives higher scores to nodes that are closer to other nodes in the network. It is particularly useful in networks where shortest path calculations are important.
 
-The code identifies and prints the top 6 characters by harmonic centrality.
+Below are the top 6 characters by harmonic centrality scores.
 
 ```{r}
-# Calculate harmonic centrality
+library(tidygraph)
+# harmonic centrality
 cent_harmonic <- harmonic_centrality(marvel_network)
 
-# Update the centrality data frame with harmonic centrality
-centrality_df$harmonic_centrality <- cent_harmonic
+centrality_df <- data.frame(
+  character_name = V(marvel_network)$character_name,
+  harmonic_centrality = harmonic_centrality(marvel_network)
+)
 
-# Display the top 6 characters by harmonic centrality
-top_harmonic <- centrality_df[order(-centrality_df$harmonic_centrality), ][1:6, c("character_name", "harmonic_centrality")]
-print("Top 6 by Harmonic Centrality:")
+top_harmonic <- centrality_df[order(-centrality_df$harmonic_centrality), ][1:6, ]
 print(top_harmonic)
 
 
@@ -627,10 +592,16 @@ This plot compares harmonic centrality with closeness centrality, with nodes col
 Nodes with high harmonic centrality and closeness centrality are likely important connectors in the network.
 
 ```{r}
-# Load necessary libraries
-library(ggplot2)
 
-# Scatter plot to visualize harmonic centrality vs. other centrality measures
+centrality_df <- data.frame(
+  character_name = V(marvel_network)$name,
+  harmonic_centrality = harmonic_centrality(marvel_network),
+  closeness = closeness(marvel_network),
+  page_rank = page_rank(marvel_network)$vector
+)
+
+
+# harmonic centrality vs. other centrality measures
 ggplot(centrality_df, aes(x = harmonic_centrality, y = closeness, color = page_rank)) +
   geom_point(alpha = 0.6, size = 3) +
   labs(title = "Harmonic Centrality vs. Closeness Centrality",
@@ -646,7 +617,7 @@ Alternatively, we can visualize the top nodes by harmonic centrality through a b
 This plot shows the top 10 characters by harmonic centrality, allowing us to easily identify the most central nodes.
 
 ```{r}
-# Bar plot to visualize top nodes by harmonic centrality
+# top nodes by harmonic centrality
 top_harmonic_plot <- centrality_df[order(-centrality_df$harmonic_centrality), ][1:10, ]
 
 ggplot(top_harmonic_plot, aes(x = reorder(character_name, harmonic_centrality), y = harmonic_centrality)) +
@@ -662,86 +633,41 @@ ggplot(top_harmonic_plot, aes(x = reorder(character_name, harmonic_centrality), 
 
 ### The neighbourhood of the most central node - VENOM
 
-According to our harmonic centrality measure, Venom is the most central character in the entire Marvel network. Indeed, if we zoom in even on his 1-step neighbourhood, we see that he formed partnerships with heroes (Spider-Man), villains (Red Skull, Doctor Doom, Carnage), and neutral characters (Magneto, Eddie Brock).
+According to our harmonic centrality measure, Venom is the most central character in the entire Marvel network. Indeed, if we zoom in even on his 1-step neighbourhood, we see that he formed partnerships with different type of characters such as heroes (Spider-Man), villains (Red Skull, Doctor Doom, Carnage), and neutral characters (Magneto, Eddie Brock).
 
-Note that Eddie Brock is the human form of Venom, who is considered to be (or to have become) a neutral or antihero character.
+Note that Eddie Brock is the human form of Venom, who is considered to be (or to have become) a neutral/antihero character.
 
 ```{r}
+
+# venom's id
 venom_id <- marvel_nodes$id[marvel_nodes$character_name == "Venom"]
 print(venom_id)
 
-# venom's node in the network
+# detecting the node
 venom_node <- which(V(marvel_network)$name == as.character(venom_id))
 
-# 1-step neighborhood for venom's node
+# venom's neighbourhood
 venom_neighborhood <- ego(marvel_network, order = 1, nodes = venom_node, mode = "all")[[1]]
 
-# subgraph for venom's neighborhood
+# venom's subgraph
 venom_subgraph <- induced_subgraph(marvel_network, venom_neighborhood)
 
-# character ids to character names for better labels
+# ensuring nodes are represented with names
 V(venom_subgraph)$label <- marvel_nodes$character_name[match(V(venom_subgraph)$name, marvel_nodes$id)]
-
 
 node_groups <- marvel_nodes$group[match(V(venom_subgraph)$name, marvel_nodes$id)]
 
-# colors for hero, villain, and neutral
-group_colors <- c("hero" = "#B40000", "villain" = "#0033A0", "neutral" = "#3C9A3F")
-
-# mapping the group values to colors
-vertex_colors <- ifelse(node_groups == 0, group_colors["hero"], 
-                        ifelse(node_groups == 1, group_colors["villain"], 
-                               group_colors["neutral"]))
-
-# plotting
-
-plot(venom_subgraph,
-     layout = layout,
-     vertex.label = V(venom_subgraph)$label,
-     vertex.label.cex = 0.8,
-     vertex.label.dist = 1.2,
-     vertex.label.degree = pi/4,
-     vertex.color = vertex_colors,
-     vertex.size = 12,
-     main = "Venom's Neighborhood",
-     margin = -0.05)
-```
-
-```{r}
-## AU: I'm trying to create a new code since the previous one gives me an error
-
-# Extract Venom's ID
-venom_id <- marvel_nodes$id[marvel_nodes$character_name == "Venom"]
-print(venom_id)
-
-# Find Venom's Node
-venom_node <- which(V(marvel_network)$name == as.character(venom_id))
-
-# Extract Venom's Neighborhood
-venom_neighborhood <- ego(marvel_network, order = 1, nodes = venom_node, mode = "all")[[1]]
-
-# Create Venom's Subgraph
-venom_subgraph <- induced_subgraph(marvel_network, venom_neighborhood)
-
-# Map Character IDs to Names
-V(venom_subgraph)$label <- marvel_nodes$character_name[match(V(venom_subgraph)$name, marvel_nodes$id)]
-
-# Determine Node Groups
-node_groups <- marvel_nodes$group[match(V(venom_subgraph)$name, marvel_nodes$id)]
-
-# Map Group Values to Colors
-# Ensure node_groups is a numeric vector
 node_groups <- as.numeric(node_groups)
 
-# Define group colors
+#  group colors
 group_colors <- c("0" = "#B40000", "1" = "#0033A0", "2" = "#3C9A3F")
 
-# Map group values to colors
+# group values to colors
 vertex_colors <- group_colors[as.character(node_groups)]
 
-# Plot the Subgraph
+# plotting venom's neighbourhood
 plot(venom_subgraph,
-     layout = layout_with_fr(venom_subgraph),  # Ensure layout is correctly defined
+     layout = layout_with_fr(venom_subgraph), 
      vertex.label = V(venom_subgraph)$label,
      vertex.label.cex = 0.8,
      vertex.label.dist = 1.2,
@@ -764,16 +690,19 @@ This visualization helped us gain a comprehensive understanding of how different
 
 A bar plot can be used to compare the rankings of characters across different centrality measures. This can help identify which characters are most central according to each measure.
 
-Although some of the labels are not read properly, we can, by looking at the distributions, say that betweenness method yields confusing results by attributing no centrality to most characters whereas closeness method detects most characters as having a centrality score of 1 (which is the perfect score). This is due to the fact that closeness methods sometimes assess characters based on their local communities in the network, rather than the network as a whole, therefore spotting perfect centrality.
+Although some of the labels are not read properly, we can, by looking at the distributions, say that betweenness method yields confusing results by attributing no centrality to most characters whereas closeness method detects most characters as having a centrality score of 1 (which is the perfect score). This is due to the fact that closeness method sometimes assesses characters based on their local communities in the network, rather than the network as a whole, therefore spotting perfect centrality.
 
-Harmonic centrality and PageRank methods seem to provide more robust results, assigning a range of centrality scores across characters. We, upon the suggestion of the Professor, decided earlier to use harmonic centrality to answer
+Harmonic centrality and PageRank methods seem to provide more robust results, assigning a range of centrality scores across characters. We, upon the suggestion of the Professor, decided earlier to use harmonic centrality to answer the question of most central node and its neighbourhood.
+
 ```{r}
-# Reshape the data for plotting
-library(tidyr)
+
+centrality_df$betweenness <- betweenness(marvel_network)
+
+# adjusting the data for plotting
 centrality_long <- pivot_longer(centrality_df, cols = c("betweenness", "page_rank", "closeness", "harmonic_centrality"),
                                 names_to = "measure", values_to = "score")
 
-# Create a bar plot
+# plot
 ggplot(centrality_long, aes(x = reorder(character_name, score), y = score, fill = measure)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap(~ measure, scales = "free") +
@@ -782,9 +711,4 @@ ggplot(centrality_long, aes(x = reorder(character_name, score), y = score, fill 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-
-
-
-# Conclusion
-
 
