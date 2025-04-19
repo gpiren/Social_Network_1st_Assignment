@@ -2,14 +2,11 @@
 title: "Social Network - Assignment #1"
 author: "Aurora Sterpellone - Gür Piren"
 format:
-  html:
-    self-contained: true
-    embed-resources: true 
+  pdf:
     toc: true
-    toc-location: left
-    toc-floating: true
-    toc-depth: 3  
     number-sections: true
+    toc-depth: 3
+    keep-tex: true
 date: "2025-04-22"
 editor_options: 
   markdown: 
@@ -19,8 +16,6 @@ editor_options:
 # Introduction
 
 Through this file, we will reveal the number and nature of the partnerships between heroes, villains, and neutral characters across the Marvel Universe. While doing so, we will try to answer a number of questions that were raised as part of the first homework assignment for the Social Network Analysis. 
-
-![GIF](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmNoeTJwdjF5OTRpZ3dkenA1Zndkbm0xcml6anFoMnM1N295OTgxMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/vBjLa5DQwwxbi/giphy.gif)
 
 ## Acknowledgements
 
@@ -70,7 +65,8 @@ Reading the data first. The original network will be plotted after a quick data 
 
 ```{r}
 
-marvel_nodes <- read.csv("data/nodes.csv", stringsAsFactors = FALSE, quote = "\"", fill = TRUE)
+marvel_nodes <- read.csv("data/nodes.csv", stringsAsFactors = FALSE,
+                         quote = "\"", fill = TRUE)
 
 marvel_links <- read.csv("data/edges.csv", stringsAsFactors = FALSE)
 
@@ -111,8 +107,11 @@ Let's read both datasets, treating text as characters (not factors), and ensurin
 ```{r}
 # to get proper x and y coordinates
 
-marvel_nodes$pos_x <- as.numeric(str_extract(marvel_nodes$X_pos, "-?\\d+\\.\\d+"))
-marvel_nodes$pos_y <- as.numeric(str_extract_all(marvel_nodes$X_pos, "-?\\d+\\.\\d+") %>% sapply(`[`, 2))
+marvel_nodes$pos_x <- as.numeric(str_extract(marvel_nodes$X_pos,
+                                             "-?\\d+\\.\\d+"))
+marvel_nodes$pos_y <- as.numeric(str_extract_all(marvel_nodes$X_pos,
+                                                 "-?\\d+\\.\\d+") %>% 
+                                   sapply(`[`, 2))
 
 # we don't need the X_pos anymore
 marvel_nodes$X_pos <- NULL
@@ -141,17 +140,21 @@ marvel_links <- marvel_links |>
          target = target + 1)
 
 # let's get rid of anything that is in parentheses in the character_name columns
-marvel_nodes$character_name <- gsub(" \\(.*?\\)", "", marvel_nodes$character_name)
+marvel_nodes$character_name <- gsub(" \\(.*?\\)", "",
+                                    marvel_nodes$character_name)
 ```
 
 ### Plot
 
 Plotting the network, without distinguishing between heroes, villains, and neutral characters.
 
-```{r}
-marvel_network <- graph_from_data_frame(d = marvel_links, vertices = marvel_nodes, directed = FALSE)
+```{r marvel-network-plot, fig.width=8, fig.height=6}
+marvel_network <- graph_from_data_frame(d = marvel_links,
+                                        vertices = marvel_nodes,
+                                        directed = FALSE)
 
-etiqueta <- ifelse(degree(marvel_network) > 5, V(marvel_network)$character_name, "")
+etiqueta <- ifelse(degree(marvel_network) > 5,
+                   V(marvel_network)$character_name, "")
 
 # Plot the network
 plot(marvel_network,
@@ -203,15 +206,16 @@ group_colors <- c("0" = "#B40000", "1" = "#0033A0", "2" = "#3C9A3F")
 
 ```
 
-```{r warning=FALSE}
+
+```{r marvel-network-plot2, fig.width=8, fig.height=6, warning=FALSE}
 V(marvel_network)$group <- marvel_nodes$group
 
 plot(marvel_network, 
      vertex.label = NA,                      
-     vertex.size = 5,                        # node size
-     edge.color = "gray15",                  # link line color
-     vertex.color = group_colors[as.character(V(marvel_network)$group)],  # colors by group
-     layout = cbind(V(marvel_network)$x, V(marvel_network)$y))  # for the coordinates
+     vertex.size = 5,                        
+     edge.color = "gray15",                  
+     vertex.color = group_colors[as.character(V(marvel_network)$group)], 
+     layout = cbind(V(marvel_network)$x, V(marvel_network)$y))  
 
 title("Marvel Partnerships Network", cex.main = 1.2)
 
@@ -226,7 +230,7 @@ legend("topleft",
 
 Let's see the characters that are represented by bigger nodes, in other words, the ones with most partnerships.
 
-```{r}
+```{r marvel-network-plot3, fig.width=8, fig.height=6}
 # plot with labels for the biggest nodes
 
 # the degree of each node
@@ -240,7 +244,8 @@ big_nodes <- V(marvel_network)[degrees > threshold]$character_name
 
 # plotting the network with labels for the biggest nodes
 plot(marvel_network,
-     vertex.label = ifelse(degrees > threshold, V(marvel_network)$character_name, NA),
+     vertex.label = ifelse(degrees > threshold,
+                           V(marvel_network)$character_name, NA),
      vertex.size = degrees / max(degrees) * 10,  
      edge.color = "gray15",
      vertex.color = group_colors[as.character(V(marvel_network)$group)],
@@ -276,7 +281,8 @@ num_nodes <- vcount(marvel_network)
 num_links <- ecount(marvel_network)
 
 # results
-cat("Marvel Network Nodes:", num_nodes, "\nMarvel Network Links:", num_links, "\n")
+cat("Marvel Network Nodes:", num_nodes,
+    "\nMarvel Network Links:", num_links, "\n")
 
 # a simple plot
 
@@ -309,7 +315,8 @@ avg_degree <- mean(degrees)
 std_dev_degree <- sd(degrees)
 
 # results
-cat("Average degree:", avg_degree, "\nStandard deviation:", std_dev_degree, "\n")
+cat("Average degree:", avg_degree, "\nStandard deviation:",
+    std_dev_degree, "\n")
 
 ```
 
@@ -333,11 +340,13 @@ This also means that there are no dominant hubs.
 # distribution of partnership numbers (linear-linear)
 
 degrees <- degree(marvel_network, mode = "all")
-hist(degrees, main = "Degree Distribution", xlab = "Number of Partnerships", col = "#B40000")
+hist(degrees, main = "Degree Distribution",
+     xlab = "Number of Partnerships", col = "#B40000")
 
 # log-log
 
-plot(table(degrees), log = "xy", main = "Degree Distribution (Log-Log)", xlab = "Degree", ylab = "Frequency", pch = 16, col = "#0033A0")
+plot(table(degrees), log = "xy", main = "Degree Distribution (Log-Log)",
+     xlab = "Degree", ylab = "Frequency", pch = 16, col = "#0033A0")
 
 max_degree <- max(degrees)
 
@@ -377,14 +386,15 @@ cat("Assortativity (degree):", assortativity_degree, "\n")
 
 Visually:
 
-```{r}
+```{r marvel-assortativity, fig.width=8, fig.height=6}
 V(marvel_network)$degree <- degree(marvel_network, mode = "all")
 
 # Plot with igraph using a different layout
 plot(marvel_network, 
      layout = layout_with_kk(marvel_network),  # kamada-kawaii layout
      vertex.size = V(marvel_network)$degree / 2,
-     vertex.color = colorRampPalette(c("#0033A0", "#B40000"))(max(V(marvel_network)$degree) + 1)[V(marvel_network)$degree + 1],
+     vertex.color = colorRampPalette(c("#0033A0",
+                                       "#B40000"))(max(V(marvel_network)$degree) + 1)[V(marvel_network)$degree + 1],
      vertex.label = NA,
      edge.alpha = 0.5,
      main = "Assortativity Visualization")
@@ -406,15 +416,16 @@ sizes(comm_without_weights)
 
 Plotting the community structure
 
-```{r}
+```{r marvel-network-plot4, fig.width=8, fig.height=6}
 
 plot(comm_without_weights, marvel_network)
 ```
 
 Let's check the community structure with weights just in case. Results are pretty much the same. Does this most probably imply that the network does not suit for a weighted assessment of community structure?
 
-```{r}
-comm_with_weights <- cluster_louvain(marvel_network,weights = E(marvel_network)$size)
+```{r marvel-network-plot5, fig.width=8, fig.height=6}
+comm_with_weights <- cluster_louvain(marvel_network,
+                                     weights = E(marvel_network)$size)
 sizes(comm_with_weights)
 
 # plotting
@@ -444,7 +455,7 @@ Below plot visualizes the network with communities from comm_without_weights, us
 The Kamada-Kawai layout tries to put characters closer if they’re partners and further apart if they’re not, making the plot and structure easier to understand.
 
 
-```{r}
+```{r marvel-network-plot6, fig.width=8, fig.height=6}
 #| warning: false
 
 ll <- layout.kamada.kawai(marvel_network)
@@ -467,7 +478,8 @@ In the rewired version, where the number of connections for each character is pr
 set.seed(616)
 
 sim_clustering <- replicate(100, {
-  g_rewired <- rewire(marvel_network, with = keeping_degseq(niter = ecount(marvel_network) * 10))
+  g_rewired <- rewire(marvel_network,
+                      with = keeping_degseq(niter = ecount(marvel_network) * 10))
   transitivity(g_rewired, type = "global")
 })
 
@@ -493,7 +505,8 @@ data <- data.frame(
 ggplot(data, aes(x = Network, y = Clustering, fill = Network)) +
   geom_col(width = 0.5) +
   geom_text(aes(label = round(Clustering, 3)), vjust = -0.5) +
-  scale_fill_manual(values = c("Original" = "#3C9A3F", "Simulated Mean" = "#D6A400")) +
+  scale_fill_manual(values = c("Original" = "#3C9A3F",
+                               "Simulated Mean" = "#D6A400")) +
   labs(title = "Clustering Coefficient: Observed vs. Simulated",
        y = "Clustering Coefficient") +
   theme_minimal()
@@ -517,7 +530,9 @@ page_rank_marvel <- page_rank(marvel_network)
 
 # top characters
 
-top_pr <- page_rank_marvel$vector %>% sort(decreasing = TRUE) %>% head()
+top_pr <- page_rank_marvel$vector %>% 
+  sort(decreasing = TRUE) %>% head()
+
 data.frame(
   character_name = V(marvel_network)$character_name[as.numeric(names(top_pr))],
   page_rank = top_pr
@@ -604,7 +619,8 @@ centrality_df <- data.frame(
 
 
 # harmonic centrality vs. other centrality measures
-ggplot(centrality_df, aes(x = harmonic_centrality, y = closeness, color = page_rank)) +
+ggplot(centrality_df, aes(x = harmonic_centrality,
+                          y = closeness, color = page_rank)) +
   geom_point(alpha = 0.6, size = 3) +
   labs(title = "Harmonic Centrality vs. Closeness Centrality",
        x = "Harmonic Centrality",
@@ -622,7 +638,8 @@ This plot shows the top 10 characters by harmonic centrality, allowing us to eas
 # top nodes by harmonic centrality
 top_harmonic_plot <- centrality_df[order(-centrality_df$harmonic_centrality), ][1:10, ]
 
-ggplot(top_harmonic_plot, aes(x = reorder(character_name, harmonic_centrality), y = harmonic_centrality)) +
+ggplot(top_harmonic_plot, aes(x = reorder(character_name, harmonic_centrality),
+                              y = harmonic_centrality)) +
   geom_bar(stat = "identity", fill = "#B40000") +
   coord_flip() +
   labs(title = "Top 10 Characters by Harmonic Centrality",
@@ -649,13 +666,15 @@ print(venom_id)
 venom_node <- which(V(marvel_network)$name == as.character(venom_id))
 
 # venom's neighbourhood
-venom_neighborhood <- ego(marvel_network, order = 1, nodes = venom_node, mode = "all")[[1]]
+venom_neighborhood <- ego(marvel_network, order = 1, nodes = venom_node,
+                          mode = "all")[[1]]
 
 # venom's subgraph
 venom_subgraph <- induced_subgraph(marvel_network, venom_neighborhood)
 
 # ensuring nodes are represented with names
-V(venom_subgraph)$label <- marvel_nodes$character_name[match(V(venom_subgraph)$name, marvel_nodes$id)]
+V(venom_subgraph)$label <- 
+  marvel_nodes$character_name[match(V(venom_subgraph)$name, marvel_nodes$id)]
 
 node_groups <- marvel_nodes$group[match(V(venom_subgraph)$name, marvel_nodes$id)]
 
@@ -701,14 +720,19 @@ Harmonic centrality and PageRank methods seem to provide more robust results, as
 centrality_df$betweenness <- betweenness(marvel_network)
 
 # adjusting the data for plotting
-centrality_long <- pivot_longer(centrality_df, cols = c("betweenness", "page_rank", "closeness", "harmonic_centrality"),
+centrality_long <- pivot_longer(centrality_df,
+                                cols = c("betweenness", "page_rank", 
+                                         "closeness",
+                                         "harmonic_centrality"),
                                 names_to = "measure", values_to = "score")
 
 # plot
-ggplot(centrality_long, aes(x = reorder(character_name, score), y = score, fill = measure)) +
+ggplot(centrality_long, aes(x = reorder(character_name, score),
+                            y = score, fill = measure)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap(~ measure, scales = "free") +
-  labs(title = "Centrality Measures Comparison", x = "Character", y = "Score") +
+  labs(title = "Centrality Measures Comparison", x = "Character",
+       y = "Score") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
